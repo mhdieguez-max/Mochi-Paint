@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Mochi Paint — kawaii coloring studio</title>
+<meta name="description" content="A cozy kawaii coloring app: open a chunky pastel pal as a coloring page, fill inside the lines, shade with soft brushes, and stamp stickers.">
+<meta name="theme-color" content="#FBE3EE">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app">
+  <header class="appbar">
+    <span class="logo">🍡 Mochi Paint</span>
+    <div class="actions">
+      <button class="ibtn" id="undoBtn" title="Undo" aria-label="Undo">↩️</button>
+      <button class="ibtn" id="redoBtn" title="Redo" aria-label="Redo">↪️</button>
+      <button class="ibtn" id="clearBtn" title="Clear canvas" aria-label="Clear canvas">🗑️</button>
+      <button class="ibtn" id="printBtn" title="Print coloring page" aria-label="Print coloring page">🖨️</button>
+      <button class="ibtn" id="saveBtn" title="Save as PNG" aria-label="Save as PNG">💾</button>
+      <button class="ibtn" id="shareBtn" title="Share to gallery" aria-label="Share to gallery" hidden>🌟</button>
+      <button class="ibtn" id="galleryBtn" title="Community gallery" aria-label="Community gallery" hidden>🖼️</button>
+    </div>
+  </header>
+
+  <main class="stage">
+    <div class="canvas-wrap" id="canvasWrap">
+      <canvas id="board" aria-label="Drawing canvas"></canvas>
+      <canvas id="lines" aria-hidden="true"></canvas>
+      <div id="cursorRing"></div>
+      <p class="hint" id="hint">Loading your coloring page…</p>
+    </div>
+  </main>
+
+  <nav class="dock">
+    <div class="tabs" role="tablist">
+      <button class="tab on" data-panel="panelTools" role="tab">🖌️ Tools</button>
+      <button class="tab" data-panel="panelColors" role="tab">🎨 Colors</button>
+      <button class="tab" data-panel="panelPals" role="tab">🐾 Pals</button>
+    </div>
+
+    <div class="panel on" id="panelTools">
+      <div class="hstrip" id="tools" role="toolbar" aria-label="Drawing tools">
+        <button class="tbtn" data-tool="pencil"><em>✏️</em><span>Pencil</span></button>
+        <button class="tbtn" data-tool="marker"><em>🖊️</em><span>Marker</span></button>
+        <button class="tbtn" data-tool="crayon"><em>🖍️</em><span>Crayon</span></button>
+        <button class="tbtn" data-tool="spray"><em>💨</em><span>Spray</span></button>
+        <button class="tbtn" data-tool="fill"><em>🪣</em><span>Paint can</span></button>
+        <button class="tbtn" data-tool="eraser"><em>🧽</em><span>Eraser</span></button>
+      </div>
+      <div class="size-row">
+        <span>Size</span>
+        <input type="range" id="size" min="2" max="40" value="10" step="1" aria-label="Brush and stamp size">
+        <span id="preview"><span id="previewDot"></span></span>
+      </div>
+    </div>
+
+    <div class="panel" id="panelColors">
+      <div class="hstrip" id="palette" aria-label="Colors"></div>
+      <div class="hstrip" id="shades" aria-label="Shades"></div>
+    </div>
+
+    <div class="panel" id="panelPals">
+      <div class="mode-row">
+        <button class="chip on" id="modePage">🎨 Coloring page</button>
+        <button class="chip" id="modeStamp">🐾 Sticker stamp</button>
+      </div>
+      <div class="hstrip pals" id="stampGrid"></div>
+    </div>
+  </nav>
+</div>
+
+<dialog id="shareDialog">
+  <h2>Share to the gallery 🌟</h2>
+  <form method="dialog" id="shareForm">
+    <label for="artTitle">Title</label>
+    <input id="artTitle" maxlength="60" placeholder="Sleepy puppy friends">
+    <label for="artArtist">Your name</label>
+    <input id="artArtist" maxlength="40" placeholder="Anonymous artist">
+    <div class="dialog-actions">
+      <button class="btn ghost" value="cancel">Cancel</button>
+      <button class="btn" id="shareConfirm" value="ok">Share it</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="galleryDialog">
+  <h2>Community gallery 🖼️</h2>
+  <div class="gallery-grid" id="galleryGrid"></div>
+  <div class="dialog-actions">
+    <button class="btn ghost" id="galleryClose">Close</button>
+  </div>
+</dialog>
+
+<div id="toast" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

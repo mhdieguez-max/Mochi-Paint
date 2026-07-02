@@ -1,0 +1,16 @@
+{
+  "name": "Mochi Paint — kawaii coloring studio",
+  "short_name": "Mochi Paint",
+  "description": "A cozy kawaii coloring app: open a chunky pastel pal as a coloring page, fill inside the lines, shade with soft brushes, and stamp stickers.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FDEFF6",
+  "theme_color": "#FBE3EE",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
