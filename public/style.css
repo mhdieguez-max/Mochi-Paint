@@ -9,15 +9,25 @@ body::after{width:380px;height:380px;background:#D7E5FB;bottom:-130px;right:-130
 
 #app{position:relative;z-index:1;height:100dvh;display:flex;flex-direction:column;max-width:760px;margin:0 auto}
 
-.appbar{display:flex;align-items:center;justify-content:space-between;gap:8px;
-  padding:calc(8px + env(safe-area-inset-top)) 14px 8px;
-  background:rgba(255,255,255,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  border-bottom:1px solid rgba(255,255,255,.9)}
-.logo{font-family:'Baloo 2',cursive;font-size:20px;font-weight:700;color:#6B5350;white-space:nowrap}
-.actions{display:flex;gap:2px}
-.ibtn{width:38px;height:38px;border-radius:12px;border:none;background:transparent;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
-.ibtn:hover{background:rgba(253,235,242,.9)}
-.ibtn:active{background:#FDEBF2;transform:scale(.92)}
+.appbar{display:flex;align-items:center;justify-content:space-between;gap:6px;
+  padding:calc(10px + env(safe-area-inset-top)) 12px 14px;
+  background:linear-gradient(135deg,#FFD9E9 0%,#F3D8F6 52%,#D9E5FB 100%);
+  border-radius:0 0 28px 28px;
+  box-shadow:0 6px 20px rgba(200,150,190,.28);
+  position:relative;z-index:5}
+.logo{font-family:'Baloo 2',cursive;font-size:17px;font-weight:700;color:#B0567F;
+  display:flex;align-items:center;gap:4px;white-space:nowrap;
+  background:rgba(255,255,255,.6);padding:5px 11px;border-radius:999px;
+  box-shadow:0 2px 6px rgba(200,150,190,.2)}
+.logo .bead{display:inline-block;animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-3px) rotate(4deg)}}
+.actions{display:flex;gap:4px}
+.ibtn{width:36px;height:36px;border-radius:13px;border:none;
+  background:rgba(255,255,255,.62);box-shadow:0 2px 7px rgba(190,140,180,.22);
+  font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;
+  transition:transform .12s,background .15s}
+.ibtn:hover{background:#fff}
+.ibtn:active{transform:scale(.88);background:#fff}
 
 .stage{flex:1;display:flex;min-height:0;padding:10px 12px 8px}
 .canvas-wrap{position:relative;flex:1;border-radius:22px;overflow:hidden;border:3px solid #FBD9E8;background:#fff;box-shadow:0 10px 30px rgba(180,140,180,.18)}
