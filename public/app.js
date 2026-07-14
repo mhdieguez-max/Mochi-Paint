@@ -769,6 +769,14 @@
   board.addEventListener("pointerleave", function () { ring.style.display = "none"; });
 
   // ---------- boot: select pencil, open the first coloring page ----------
+  var splash = document.getElementById("splash");
+  var splashShownAt = Date.now();
+  function hideSplash() {
+    if (!splash) return;
+    // Keep the splash up at least briefly so it reads as a moment, not a flicker.
+    var wait = Math.max(0, 1100 - (Date.now() - splashShownAt));
+    setTimeout(function () { splash.classList.add("done"); }, wait);
+  }
   markTool();
   initCanvas();
   function boot() {
@@ -779,6 +787,7 @@
     markPal(stampBtns[1]);
     setHint(pageName + " is ready to color! Grab the paint can to fill areas, or shade with the brushes.");
     undoStack = [];
+    hideSplash();
   }
   boot();
 
