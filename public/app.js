@@ -423,6 +423,38 @@
     EF(c, 0.14, 0.66, 0.07, 0.05, "#F5A25D");
   }
 
+  function stHamster(c) {
+    oc(c, "rgba(180,130,80,0.5)");
+    CC(c, -0.34, -0.5, 0.14, "#F2D8B8");
+    CC(c, 0.34, -0.5, 0.14, "#F2D8B8");
+    EF(c, -0.34, -0.5, 0.07, 0.07, "#F6CFD6");
+    EF(c, 0.34, -0.5, 0.07, 0.07, "#F6CFD6");
+    CC(c, 0, 0.08, 0.58, "#F2D8B8");
+    EF(c, 0, 0.3, 0.34, 0.26, "#FCF6EC");
+    bead(c, -0.2, -0.08, 0.06); bead(c, 0.2, -0.08, 0.06);
+    EF(c, 0, 0.08, 0.05, 0.04, "#4A3B36");
+    catMouth(c, 0, 0.16, 0.045);
+    cheek(c, -0.4, 0.04, 0.09); cheek(c, 0.4, 0.04, 0.09);
+    E(c, -0.16, 0.62, 0.1, 0.06, "#F2D8B8");
+    E(c, 0.16, 0.62, 0.1, 0.06, "#F2D8B8");
+  }
+
+  function stHedgehog(c) {
+    oc(c, "rgba(140,100,60,0.55)");
+    for (var hi = 0; hi < 7; hi++) {
+      var ha = Math.PI * (1 + hi / 6);
+      CC(c, Math.cos(ha) * 0.42, -0.02 + Math.sin(ha) * 0.36, 0.17, "#C79B6E");
+    }
+    CC(c, 0, -0.04, 0.46, "#C79B6E");
+    CC(c, 0, 0.16, 0.44, "#F5E3C8");
+    bead(c, -0.16, 0.06, 0.055); bead(c, 0.16, 0.06, 0.055);
+    EF(c, 0, 0.18, 0.05, 0.04, "#4A3B36");
+    grin(c, 0, 0.24, 0.04);
+    cheek(c, -0.32, 0.18, 0.07); cheek(c, 0.32, 0.18, 0.07);
+    E(c, -0.16, 0.58, 0.1, 0.06, "#F5E3C8");
+    E(c, 0.16, 0.58, 0.1, 0.06, "#F5E3C8");
+  }
+
   var STAMPS = [
     ["Yuki", "pom pup", stPom],
     ["Kori", "polar bear", stPolar],
@@ -437,7 +469,9 @@
     ["Pen", "penguin", stPenguin],
     ["Kero", "frog", stFrog],
     ["Panpan", "panda", stPanda],
-    ["Kamo", "duck", stDuck]
+    ["Kamo", "duck", stDuck],
+    ["Hamu", "hamster", stHamster],
+    ["Hari", "hedgehog", stHedgehog]
   ];
 
   function withChar(c, x, y, s, fn, asLines) {
@@ -779,12 +813,20 @@
   }
   markTool();
   initCanvas();
+  // Deep link from the home page: /?pal=usagi opens that pal's coloring page.
+  var startIdx = 0;
+  try {
+    var palParam = (new URLSearchParams(location.search).get("pal") || "").toLowerCase();
+    STAMPS.forEach(function (st, i) {
+      if (st[0].toLowerCase() === palParam) startIdx = i;
+    });
+  } catch (err) {}
   function boot() {
     if (!ready) { requestAnimationFrame(boot); return; }
-    pageFn = STAMPS[0][2];
-    pageName = STAMPS[0][0] + " the " + STAMPS[0][1];
+    pageFn = STAMPS[startIdx][2];
+    pageName = STAMPS[startIdx][0] + " the " + STAMPS[startIdx][1];
     drawPage();
-    markPal(stampBtns[1]);
+    markPal(stampBtns[startIdx + 1]);
     setHint(pageName + " is ready to color! Grab the paint can to fill areas, or shade with the brushes.");
     undoStack = [];
     hideSplash();
