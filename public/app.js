@@ -183,7 +183,7 @@
   // Helpers draw in a -1..1 space. In LINE_MODE they render as a coloring
   // page: white fills, uniform dark outlines, no blush/shadow.
   var TAU = 7;
-  function oc(c, col) { if (!LINE_MODE) c.strokeStyle = col; }
+  function oc(c, col) { if (!LINE_MODE) c.strokeStyle = col.replace(/,\s*0\.\d+\)/, ",0.85)"); }
   function mapFill(f) {
     if (!LINE_MODE) return f;
     if (f === "#4A3B36" || f === "#6B5347" || f === "#fff" || f === "#FFFFFF") return f;
@@ -493,10 +493,10 @@
     c.translate(x, y);
     c.scale(s, s);
     LINE_MODE = !!asLines;
-    c.lineWidth = asLines ? 0.045 : 0.035;
+    c.lineWidth = 0.045;
     c.lineCap = "round";
     c.lineJoin = "round";
-    c.strokeStyle = asLines ? "#5A4A42" : "rgba(107,80,72,0.55)";
+    c.strokeStyle = asLines ? "#5A4A42" : "rgba(90,74,66,0.85)";
     fn(c);
     LINE_MODE = false;
     c.restore();
