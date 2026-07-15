@@ -190,6 +190,25 @@
   }
 
   // ---------- coloring pages ----------
+  // ---------- progress autosave: each pal's paint survives app restarts ----------
+  var SAVE_PREFIX = "mochi-progress-";
+  var currentSlug = "blank";
+  var saveT = null;
+  function scheduleSave() {
+    clearTimeout(saveT);
+    saveT = setTimeout(function () {
+      try { localStorage.setItem(SAVE_PREFIX + currentSlug, board.toDataURL("image/png")); } catch (e) { }
+    }, 600);
+  }
+  function restoreProgress() {
+    var data = null;
+    try { data = localStorage.getItem(SAVE_PREFIX + currentSlug); } catch (e) { }
+    if (!data) return;
+    var img = new Image();
+    img.onload = function () { ctx.drawImage(img, 0, 0, W, H); };
+    img.src = data;
+  }
+
   function drawPage() {
     lctx.clearRect(0, 0, W, H);
     if (!pageFn) { lineData = null; return; }
@@ -204,12 +223,14 @@
     lctx.putImageData(img, 0, 0);
     lineData = d;
   }
-  function loadPage(fn, name) {
+  function loadPage(fn, name, slug) {
     pageFn = fn; pageName = name;
+    currentSlug = slug || "blank";
     pushUndo();
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, W, H);
     drawPage();
+    restoreProgress();
     if (fn) {
       setHint(name + " is ready to color! Grab the paint can to fill areas, or shade with the brushes.");
       toast(name + " coloring page loaded 🎨");
@@ -243,7 +264,7 @@
   blankBtn.appendChild(blankFace);
   blankBtn.appendChild(blankLabel);
   blankBtn.addEventListener("click", function () {
-    loadPage(null, "");
+    loadPage(null, "", "blank");
     markPal(blankBtn);
   });
   grid.appendChild(blankBtn);
@@ -266,7 +287,7 @@
     b.appendChild(label);
     b.addEventListener("click", function () {
       if (palMode === "page") {
-        loadPage(st[2], st[0] + " the " + st[1]);
+        loadPage(st[2], st[0] + " the " + st[1], st[0].toLowerCase());
         markPal(b);
       } else {
         stampFn = st[2];
@@ -313,17 +334,20 @@
     if (!im) { toast("Nothing to undo"); return; }
     try { redoStack.push(ctx.getImageData(0, 0, W, H)); } catch (e) { }
     ctx.putImageData(im, 0, 0);
+    scheduleSave();
   });
   document.getElementById("redoBtn").addEventListener("click", function () {
     var im = redoStack.pop();
     if (!im) { toast("Nothing to redo"); return; }
     try { undoStack.push(ctx.getImageData(0, 0, W, H)); } catch (e) { }
     ctx.putImageData(im, 0, 0);
+    scheduleSave();
   });
   document.getElementById("clearBtn").addEventListener("click", function () {
     pushUndo();
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, W, H);
+    scheduleSave();
     toast(pageFn ? "Paint cleared — the outlines are safe! (undo brings paint back)" : "Fresh canvas! (undo brings it back)");
   });
 
@@ -465,8 +489,8 @@
     try { board.setPointerCapture(e.pointerId); } catch (err) { }
     var p = pos(e);
     pushUndo();
-    if (tool === "fill") { floodFill(p[0], p[1]); return; }
-    if (tool === "stamp" && stampFn) { withChar(ctx, p[0], p[1], size * 4 * dpr, stampFn, false); return; }
+    if (tool === "fill") { floodFill(p[0], p[1]); scheduleSave(); return; }
+    if (tool === "stamp" && stampFn) { withChar(ctx, p[0], p[1], size * 4 * dpr, stampFn, false); scheduleSave(); return; }
     drawing = true;
     pts = [p];
     if (tool === "crayon") crayonSeg(p, p);
@@ -485,7 +509,7 @@
     else if (tool === "marker") markerPath();
     else seg(last, p);
   });
-  function endStroke() { drawing = false; pts = []; snap = null; }
+  function endStroke() { drawing = false; pts = []; snap = null; scheduleSave(); }
   board.addEventListener("pointerup", endStroke);
   board.addEventListener("pointercancel", endStroke);
 
@@ -526,7 +550,9 @@
     if (!ready) { requestAnimationFrame(boot); return; }
     pageFn = STAMPS[startIdx][2];
     pageName = STAMPS[startIdx][0] + " the " + STAMPS[startIdx][1];
+    currentSlug = STAMPS[startIdx][0].toLowerCase();
     drawPage();
+    restoreProgress();
     markPal(stampBtns[startIdx + 1]);
     setHint(pageName + " is ready to color! Grab the paint can to fill areas, or shade with the brushes.");
     undoStack = [];
@@ -542,20 +568,47 @@
     document.getElementById("shareBtn").hidden = false;
     document.getElementById("galleryBtn").hidden = false;
   }
+  // Android back button: an open dialog gets its own history entry, so the
+  // hardware/gesture back closes the dialog instead of leaving the app.
+  // The dialog "close" event is unreliable in some WebViews, so every close
+  // path pops the entry explicitly instead of listening for it.
+  function openDialog(d) {
+    // Only one dialog is ever open; never stack a second marker entry.
+    try { if (!(history.state && history.state.mochiDialog)) history.pushState({ mochiDialog: d.id }, ""); } catch (e) { }
+    d.showModal();
+  }
+  function popDialogState() {
+    if (history.state && history.state.mochiDialog) history.back();
+  }
+  function closeDialog(d) {
+    d.close();
+    popDialogState(d);
+  }
+  window.addEventListener("popstate", function () {
+    document.querySelectorAll("dialog[open]").forEach(function (d) { d.close(); });
+  });
+  document.querySelectorAll("dialog").forEach(function (d) {
+    d.addEventListener("cancel", function () {
+      setTimeout(function () { popDialogState(d); }, 0);
+    });
+  });
+
   var galleryDialog = document.getElementById("galleryDialog");
   document.getElementById("galleryBtn").addEventListener("click", function () {
     loadGallery();
-    galleryDialog.showModal();
+    openDialog(galleryDialog);
   });
   document.getElementById("galleryClose").addEventListener("click", function () {
-    galleryDialog.close();
+    closeDialog(galleryDialog);
   });
 
   var shareDialog = document.getElementById("shareDialog");
   document.getElementById("shareBtn").addEventListener("click", function () {
-    shareDialog.showModal();
+    openDialog(shareDialog);
   });
   document.getElementById("shareForm").addEventListener("submit", function (e) {
+    // method="dialog" closes the dialog for both buttons; pop its history entry.
+    setTimeout(function () { popDialogState(shareDialog); }, 0);
     if (e.submitter && e.submitter.value === "cancel") return;
     if (!sb) return;
     var title = document.getElementById("artTitle").value.trim() || "Untitled masterpiece";

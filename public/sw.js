@@ -1,9 +1,29 @@
-// Mochi Paint service worker: network-first with offline fallback.
-// Fresh files whenever online (no stale-cache bugs), cached copy offline.
-var CACHE = "mochi-paint-v1";
+// Mochi Paint service worker.
+// Core app shell is precached on install so the app opens and works fully
+// offline (a Play Store requirement — never show a browser error page).
+// Runtime strategy stays network-first: fresh files whenever online, cached
+// copy when the network is gone.
+var CACHE = "mochi-paint-v2";
+var CORE = [
+  "/",
+  "/home",
+  "/app.js",
+  "/pals.js",
+  "/config.js",
+  "/style.css",
+  "/manifest.webmanifest",
+  "/icon-192.png",
+  "/icon-512.png",
+  "/privacy.html",
+  "/data-deletion.html"
+];
 
-self.addEventListener("install", function () {
-  self.skipWaiting();
+self.addEventListener("install", function (e) {
+  e.waitUntil(
+    caches.open(CACHE)
+      .then(function (c) { return c.addAll(CORE); })
+      .then(function () { return self.skipWaiting(); })
+  );
 });
 
 self.addEventListener("activate", function (e) {
@@ -26,7 +46,17 @@ self.addEventListener("fetch", function (e) {
         return res;
       })
       .catch(function () {
-        return caches.match(e.request);
+        // Offline: serve the cached copy. Deep links like /?pal=usagi must
+        // still resolve to the cached studio shell, so navigations ignore
+        // the query string and finally fall back to the app root.
+        // ignoreSearch lets versioned URLs (app.js?v=2) hit the precached
+        // bare paths, and deep links (/?pal=usagi) hit the cached shell.
+        if (e.request.mode === "navigate") {
+          return caches.match(e.request, { ignoreSearch: true }).then(function (r) {
+            return r || caches.match("/");
+          });
+        }
+        return caches.match(e.request, { ignoreSearch: true });
       })
   );
 });

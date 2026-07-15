@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Mochi Paint Coloring Pages</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,7 +14,8 @@
     body:before,body:after{content:"";position:fixed;border-radius:50%;filter:blur(78px);opacity:.55;pointer-events:none}
     body:before{width:360px;height:360px;background:#FBD3E5;top:-120px;left:-120px}
     body:after{width:400px;height:400px;background:#D7E5FB;right:-135px;bottom:-135px}
-    .shell{position:relative;z-index:1;max-width:1240px;margin:0 auto;padding:22px 22px 50px}
+    .shell{position:relative;z-index:1;max-width:1240px;margin:0 auto;
+      padding:calc(22px + env(safe-area-inset-top)) calc(22px + env(safe-area-inset-right)) calc(50px + env(safe-area-inset-bottom)) calc(22px + env(safe-area-inset-left))}
     .nav{display:flex;flex-direction:column;align-items:center;gap:12px}
     .brand{display:flex;align-items:center;gap:8px;font-family:'Baloo 2',cursive;font-weight:800;font-size:22px;color:#B0567F;background:rgba(255,255,255,.68);padding:8px 18px;border-radius:999px;box-shadow:0 2px 8px rgba(200,150,190,.2);white-space:nowrap}
     .links{display:flex;gap:10px;row-gap:10px;flex-wrap:wrap;justify-content:center;max-width:100%}
@@ -38,8 +39,10 @@
     .species{font-size:11px;font-weight:800;color:#A08F88;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
     .pill{font-size:12px;font-weight:800;color:#fff;background:var(--accent);padding:5px 14px;border-radius:999px;margin-top:3px}
     footer{text-align:center;padding:20px;color:#A08F88;font-weight:800}
+    .foot-links{margin-top:6px;font-size:12px}
+    .foot-links a{color:#A08F88;text-decoration:underline}
     @media(max-width:760px){
-      .shell{padding:14px 12px 36px}
+      .shell{padding:calc(14px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(36px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left))}
       /* Categories become one tidy swipeable row instead of disappearing. */
       .links{flex-wrap:nowrap;justify-content:flex-start;width:100%;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none}
       .links::-webkit-scrollbar{display:none}
@@ -69,10 +72,13 @@
     </header>
 
     <main id="groups"></main>
-    <footer>🍡 Made with love, one pal at a time - Mochi Paint</footer>
+    <footer>
+      🍡 Made with love, one pal at a time - Mochi Paint
+      <div class="foot-links"><a href="/privacy.html">Privacy</a> · <a href="/data-deletion.html">Data deletion</a></div>
+    </footer>
   </div>
 
-  <script src="/pals.js"></script>
+  <script src="/pals.js?v=2"></script>
   <script>
     // Home previews render with the exact same MochiPals draw functions the
     // coloring studio uses, so every card matches the page it opens.
@@ -210,6 +216,11 @@
       clearTimeout(resizeT);
       resizeT = setTimeout(paintAll, 120);
     });
+
+    // PWA: offline support (production only, keeps local dev simple)
+    if ("serviceWorker" in navigator && location.protocol === "https:") {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
   </script>
 </body>
 </html>
