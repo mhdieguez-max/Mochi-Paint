@@ -122,6 +122,10 @@ dialog input:focus{outline:none;border-color:#F4A7C3}
 @media(max-width:480px){
   .logo{padding:5px 10px}
   .logo-text{display:none}
+  /* keep all 8 app-bar buttons inside a 360px-wide screen */
+  .appbar{padding-left:10px;padding-right:10px}
+  .actions{gap:2px}
+  .ibtn{width:32px;height:32px;font-size:15px;border-radius:11px}
 }
 
 @media(min-width:768px){
