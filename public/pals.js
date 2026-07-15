@@ -397,12 +397,12 @@ window.MochiPals = (function () {
       c.fillStyle = mapFill("#D7C4EF"); c.fill(); c.stroke();
     }
     // Rounded crest merges into the head via the head's fill.
-    TR(c, [-0.13, -0.5], [0.13, -0.5], [0, -0.84], "#F6DCA8", 0.24);
+    E(c, 0, -0.6, 0.14, 0.2, "#F6DCA8");
     E(c, 0, 0.24, 0.29, 0.34, "#B8A0D8");
     CC(c, 0, -0.28, 0.34, "#B8A0D8");
     EF(c, 0, 0.32, 0.18, 0.22, "#EFE6FA");
     bead(c, -0.12, -0.32, 0.05); bead(c, 0.12, -0.32, 0.05);
-    TR(c, [-0.08, -0.2], [0.08, -0.2], [0, -0.06], "#F6A96C", 0.3);
+    E(c, 0, -0.14, 0.08, 0.055, "#F6A96C");
     cheek(c, -0.23, -0.2, 0.05); cheek(c, 0.23, -0.2, 0.05);
     E(c, -0.12, 0.56, 0.09, 0.09, "#B8A0D8");
     E(c, 0.12, 0.56, 0.09, 0.09, "#B8A0D8");
@@ -456,16 +456,17 @@ window.MochiPals = (function () {
   }
   function stJelly(c) {
     oc(c, "rgba(130,105,165,0.55)");
-    E(c, 0, -0.28, 0.5, 0.36, "#C6A7ED");
-    for (var i = 0; i < 5; i++) {
-      c.beginPath();
-      c.moveTo(-0.34 + i * 0.17, 0.02);
-      c.quadraticCurveTo(-0.44 + i * 0.17, 0.36, -0.28 + i * 0.17, 0.7);
-      c.stroke();
-    }
-    bead(c, -0.16, -0.32, 0.055); bead(c, 0.16, -0.32, 0.055);
-    cheek(c, -0.3, -0.18, 0.06); cheek(c, 0.3, -0.18, 0.06);
-    catMouth(c, 0, -0.2, 0.04);
+    // Chubby rounded tentacles tuck up under the bell — each one is a
+    // closed capsule (a clean fill region), never a stray stroke.
+    E(c, -0.36, 0.26, 0.08, 0.26, "#D9C4F5", 0.22);
+    E(c, -0.18, 0.36, 0.08, 0.3, "#D9C4F5", 0.08);
+    E(c, 0, 0.4, 0.08, 0.32, "#D9C4F5", 0);
+    E(c, 0.18, 0.36, 0.08, 0.3, "#D9C4F5", -0.08);
+    E(c, 0.36, 0.26, 0.08, 0.26, "#D9C4F5", -0.22);
+    E(c, 0, -0.22, 0.5, 0.38, "#C6A7ED");
+    bead(c, -0.16, -0.26, 0.055); bead(c, 0.16, -0.26, 0.055);
+    cheek(c, -0.3, -0.12, 0.06); cheek(c, 0.3, -0.12, 0.06);
+    catMouth(c, 0, -0.14, 0.04);
   }
   function stDolphin(c) {
     oc(c, "rgba(80,120,165,0.55)");
@@ -556,14 +557,12 @@ window.MochiPals = (function () {
   function stReindeer(c) {
     oc(c, "rgba(120,85,55,0.55)");
     ground(c);
-    // Chunky colorable antlers (filled shapes, not thin strokes) — the beams
-    // overlap the head so the coloring-page outline stays connected.
-    E(c, -0.3, -0.5, 0.06, 0.18, "#A9784D", 0.18);
-    E(c, -0.44, -0.6, 0.11, 0.05, "#A9784D", 0.5);
-    E(c, -0.2, -0.68, 0.1, 0.05, "#A9784D", -0.45);
-    E(c, 0.3, -0.5, 0.06, 0.18, "#A9784D", -0.18);
-    E(c, 0.44, -0.6, 0.11, 0.05, "#A9784D", -0.5);
-    E(c, 0.2, -0.68, 0.1, 0.05, "#A9784D", 0.45);
+    // Simple two-part antlers: one chunky beam that grows out of the head
+    // plus a single soft tine, so nothing reads as tangled loops.
+    E(c, -0.44, -0.55, 0.1, 0.055, "#A9784D", 0.75);
+    E(c, -0.28, -0.48, 0.065, 0.2, "#A9784D", 0.22);
+    E(c, 0.44, -0.55, 0.1, 0.055, "#A9784D", -0.75);
+    E(c, 0.28, -0.48, 0.065, 0.2, "#A9784D", -0.22);
     E(c, -0.52, -0.1, 0.14, 0.09, "#C18A5A", 0.4);
     E(c, 0.52, -0.1, 0.14, 0.09, "#C18A5A", -0.4);
     E(c, 0, 0.1, 0.5, 0.48, "#C18A5A");
@@ -576,25 +575,53 @@ window.MochiPals = (function () {
   function stSnowman(c) {
     oc(c, "rgba(120,145,165,0.55)");
     ground(c);
-    CC(c, 0, 0.34, 0.42, "#FDFEFF");
-    CC(c, 0, -0.24, 0.32, "#FDFEFF");
-    E(c, 0, -0.58, 0.36, 0.08, "#5B6B84");
-    E(c, 0, -0.72, 0.22, 0.16, "#5B6B84");
-    bead(c, -0.11, -0.28, 0.04); bead(c, 0.11, -0.28, 0.04);
-    TR(c, [0.02, -0.18], [0.3, -0.12], [0.02, -0.06], "#F5A25D");
-    catMouth(c, 0, -0.08, 0.035);
-    E(c, 0, 0.02, 0.34, 0.06, "#E85F5C");
-    CC(c, 0, 0.2, 0.035, "#4A3B36"); CC(c, 0, 0.38, 0.035, "#4A3B36");
+    // Two soft snowballs; everything else sits on top of them cleanly.
+    CC(c, 0, 0.36, 0.4, "#FDFEFF");
+    CC(c, 0, -0.18, 0.3, "#FDFEFF");
+    // Cozy beanie: dome, then a brim that covers the dome's base, then a
+    // pompom on top — no lines cut across the face.
+    E(c, 0, -0.4, 0.23, 0.15, "#E85F5C");
+    E(c, 0, -0.33, 0.26, 0.07, "#F6C6D5");
+    CC(c, 0, -0.55, 0.08, "#F6C6D5");
+    // Scarf hugs the neck between the snowballs, tail hangs to one side.
+    E(c, 0.17, 0.28, 0.08, 0.13, "#E85F5C", -0.15);
+    E(c, 0, 0.1, 0.26, 0.08, "#E85F5C");
+    bead(c, -0.1, -0.23, 0.042); bead(c, 0.1, -0.23, 0.042);
+    TR(c, [-0.045, -0.17], [0.045, -0.17], [0, -0.07], "#F5A25D", 0.25);
+    cheek(c, -0.19, -0.14, 0.05); cheek(c, 0.19, -0.14, 0.05);
+    grin(c, 0, -0.04, 0.032);
+    CC(c, 0, 0.34, 0.035, "#4A3B36"); CC(c, 0, 0.48, 0.035, "#4A3B36");
   }
   function stTree(c) {
     oc(c, "rgba(70,120,75,0.55)");
     ground(c);
-    E(c, 0, 0.66, 0.13, 0.16, "#A9784D");
-    TR(c, [0, -0.78], [-0.42, -0.18], [0.42, -0.18], "#7FC46B");
-    TR(c, [0, -0.5], [-0.54, 0.14], [0.54, 0.14], "#69B65E");
-    TR(c, [0, -0.18], [-0.66, 0.58], [0.66, 0.58], "#5FA855");
-    CC(c, -0.22, -0.08, 0.055, "#F48FB1"); CC(c, 0.25, 0.12, 0.055, "#FFE082"); CC(c, -0.1, 0.34, 0.055, "#64B5F6");
-    CC(c, 0, -0.84, 0.09, "#FFE082");
+    // One tier of the tree: rounded sloping sides and a scalloped bottom
+    // edge, so the whole tree reads as soft stacked branches.
+    function tier(w, yTop, yBot, f) {
+      c.beginPath();
+      c.moveTo(0, yTop);
+      c.quadraticCurveTo(w * 0.62, (yTop + yBot) / 2, w, yBot);
+      var step = (2 * w) / 3;
+      for (var i = 0; i < 3; i++) {
+        var x0 = w - i * step, x1 = w - (i + 1) * step;
+        c.quadraticCurveTo((x0 + x1) / 2, yBot + 0.1, x1, yBot);
+      }
+      c.quadraticCurveTo(-w * 0.62, (yTop + yBot) / 2, 0, yTop);
+      c.closePath();
+      c.fillStyle = mapFill(f); c.fill(); c.stroke();
+    }
+    E(c, 0, 0.6, 0.13, 0.15, "#A9784D");
+    tier(0.62, -0.22, 0.42, "#5FA855");
+    tier(0.52, -0.48, 0.02, "#69B65E");
+    tier(0.4, -0.74, -0.28, "#7FC46B");
+    CC(c, 0, -0.8, 0.09, "#FFE082");
+    // Ornaments sit in open space, clear of the branch lines.
+    CC(c, -0.3, 0.3, 0.055, "#F48FB1");
+    CC(c, 0.3, 0.32, 0.055, "#64B5F6");
+    CC(c, 0.18, -0.08, 0.05, "#F48FB1");
+    bead(c, -0.09, -0.5, 0.042); bead(c, 0.09, -0.5, 0.042);
+    cheek(c, -0.17, -0.41, 0.04); cheek(c, 0.17, -0.41, 0.04);
+    grin(c, 0, -0.42, 0.03);
   }
   function stSantaBear(c) {
     oc(c, "rgba(120,85,55,0.55)");
