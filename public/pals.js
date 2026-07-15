@@ -23,7 +23,27 @@ window.MochiPals = (function () {
   function E(c, x, y, rx, ry, f, rot) { c.beginPath(); c.ellipse(x, y, rx, ry, rot || 0, 0, TAU); c.fillStyle = mapFill(f); c.fill(); c.stroke(); }
   function EF(c, x, y, rx, ry, f, rot) { c.beginPath(); c.ellipse(x, y, rx, ry, rot || 0, 0, TAU); c.fillStyle = mapFill(f); c.fill(); if (LINE_MODE && f !== "#fff" && f !== "#FFFFFF") c.stroke(); }
   function CC(c, x, y, r, f) { E(c, x, y, r, r, f); }
-  function TR(c, a, b, d, f) { c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.lineTo(d[0], d[1]); c.closePath(); c.fillStyle = mapFill(f); c.fill(); c.stroke(); }
+  function TR(c, a, b, d, f, k) {
+    // Soft triangle: every edge bows outward (k>0) or gently inward (k<0) so
+    // ears, horns, beaks, and spikes read as plush rounded shapes, never as
+    // sharp geometric wedges.
+    k = k == null ? 0.16 : k;
+    var cx = (a[0] + b[0] + d[0]) / 3, cy = (a[1] + b[1] + d[1]) / 3;
+    var pts = [a, b, d];
+    c.beginPath();
+    c.moveTo(a[0], a[1]);
+    for (var i = 0; i < 3; i++) {
+      var p = pts[i], q = pts[(i + 1) % 3];
+      var mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2;
+      var ex = q[0] - p[0], ey = q[1] - p[1];
+      var len = Math.sqrt(ex * ex + ey * ey) || 1;
+      var nx = -ey / len, ny = ex / len;
+      if ((mx - cx) * nx + (my - cy) * ny < 0) { nx = -nx; ny = -ny; }
+      c.quadraticCurveTo(mx + nx * k * len, my + ny * k * len, q[0], q[1]);
+    }
+    c.closePath();
+    c.fillStyle = mapFill(f); c.fill(); c.stroke();
+  }
   function ground(c) { if (LINE_MODE) return; EF(c, 0, 0.82, 0.6, 0.1, "rgba(130,144,180,0.16)"); }
   function bead(c, x, y, r) {
     EF(c, x, y, r, r, "#4A3B36");
@@ -308,80 +328,107 @@ window.MochiPals = (function () {
   function stTrex(c) {
     oc(c, "rgba(86,130,85,0.55)");
     ground(c);
-    // Spikes, tail, and muzzle go under the body/head so they merge into one
-    // connected silhouette instead of crossing lines through it.
-    for (var i = 0; i < 3; i++) TR(c, [-0.5 + i * 0.19, -0.16], [-0.4 + i * 0.19, -0.44], [-0.31 + i * 0.19, -0.16], "#C6E58A");
-    TR(c, [-0.54, 0.1], [-0.9, -0.04], [-0.56, 0.28], "#9AD17B");
-    E(c, -0.1, 0.18, 0.48, 0.38, "#9AD17B");
-    E(c, 0.36, -0.16, 0.34, 0.3, "#9AD17B");
-    bead(c, 0.26, -0.23, 0.055);
-    cheek(c, 0.54, -0.12, 0.055);
-    grin(c, 0.42, -0.05, 0.1);
-    E(c, -0.22, 0.56, 0.11, 0.26, "#9AD17B", 0.04);
-    E(c, 0.18, 0.56, 0.11, 0.26, "#9AD17B", -0.04);
-    E(c, -0.3, 0.78, 0.17, 0.07, "#9AD17B");
-    E(c, 0.1, 0.78, 0.17, 0.07, "#9AD17B");
-    E(c, 0.1, 0.22, 0.12, 0.07, "#9AD17B", 0.35);
-    E(c, 0.3, 0.32, 0.1, 0.06, "#9AD17B", 0.5);
+    // Chunky standing t-rex: one big egg body, soft back spikes and a tail
+    // nub that tuck under it so the outline stays one connected shape.
+    TR(c, [-0.46, -0.24], [-0.3, -0.56], [-0.16, -0.28], "#C6E58A", 0.2);
+    TR(c, [-0.2, -0.4], [0, -0.7], [0.1, -0.4], "#C6E58A", 0.2);
+    TR(c, [0.14, -0.4], [0.32, -0.64], [0.38, -0.32], "#C6E58A", 0.2);
+    E(c, -0.5, 0.48, 0.2, 0.11, "#9AD17B", 0.3);
+    E(c, 0, 0.06, 0.5, 0.55, "#9AD17B");
+    EF(c, 0.02, 0.34, 0.27, 0.23, "#DFF3C8");
+    bead(c, -0.16, -0.18, 0.06); bead(c, 0.16, -0.18, 0.06);
+    cheek(c, -0.32, -0.05, 0.07); cheek(c, 0.32, -0.05, 0.07);
+    grin(c, 0, -0.05, 0.06);
+    E(c, -0.44, 0.16, 0.09, 0.15, "#9AD17B", 0.45);
+    E(c, 0.44, 0.16, 0.09, 0.15, "#9AD17B", -0.45);
+    E(c, -0.2, 0.63, 0.14, 0.09, "#9AD17B");
+    E(c, 0.2, 0.63, 0.14, 0.09, "#9AD17B");
   }
   function stTricera(c) {
     oc(c, "rgba(120,105,75,0.55)");
     ground(c);
-    E(c, 0, 0.3, 0.58, 0.36, "#D8B66A");
-    E(c, 0, -0.14, 0.43, 0.34, "#D8B66A");
-    E(c, 0, -0.24, 0.56, 0.22, "#E9CE8A");
-    TR(c, [-0.26, -0.36], [-0.42, -0.67], [-0.08, -0.42], "#F7E7BE");
-    TR(c, [0.26, -0.36], [0.42, -0.67], [0.08, -0.42], "#F7E7BE");
-    TR(c, [-0.06, -0.18], [0.06, -0.18], [0, -0.42], "#F7E7BE");
-    bead(c, -0.18, -0.12, 0.055); bead(c, 0.18, -0.12, 0.055);
-    EF(c, 0, 0.04, 0.14, 0.09, "#F4DDA9");
-    grin(c, 0, 0.1, 0.05);
-    E(c, -0.32, 0.62, 0.12, 0.09, "#D8B66A");
-    E(c, 0.32, 0.62, 0.12, 0.09, "#D8B66A");
+    // Scalloped frill fans out behind the head as a row of soft bumps.
+    for (var i = 0; i < 5; i++) {
+      var t = Math.PI * i / 4;
+      CC(c, -Math.cos(t) * 0.4, -0.08 - Math.sin(t) * 0.36, 0.17, "#E9CE8A");
+    }
+    TR(c, [-0.34, -0.2], [-0.24, -0.62], [-0.04, -0.28], "#F7E7BE", 0.16);
+    TR(c, [0.34, -0.2], [0.24, -0.62], [0.04, -0.28], "#F7E7BE", 0.16);
+    E(c, 0, 0.36, 0.5, 0.3, "#D8B66A");
+    CC(c, 0, -0.06, 0.42, "#D8B66A");
+    bead(c, -0.16, -0.14, 0.055); bead(c, 0.16, -0.14, 0.055);
+    E(c, 0, 0.12, 0.16, 0.11, "#F4DDA9");
+    EF(c, -0.05, 0.11, 0.022, 0.032, "#C9A25E");
+    EF(c, 0.05, 0.11, 0.022, 0.032, "#C9A25E");
+    cheek(c, -0.3, 0.02, 0.06); cheek(c, 0.3, 0.02, 0.06);
+    E(c, -0.26, 0.64, 0.13, 0.09, "#D8B66A");
+    E(c, 0.26, 0.64, 0.13, 0.09, "#D8B66A");
   }
   function stStego(c) {
     oc(c, "rgba(75,130,110,0.55)");
     ground(c);
-    E(c, -0.08, 0.28, 0.62, 0.32, "#78C6A3");
-    E(c, 0.5, 0.02, 0.24, 0.22, "#78C6A3");
-    TR(c, [-0.58, 0.22], [-0.94, 0.1], [-0.6, 0.36], "#78C6A3");
-    for (var i = 0; i < 5; i++) TR(c, [-0.48 + i * 0.2, 0.02], [-0.38 + i * 0.2, -0.32 - Math.abs(2 - i) * 0.03], [-0.28 + i * 0.2, 0.02], "#F3B6C7");
-    bead(c, 0.56, -0.04, 0.05);
-    cheek(c, 0.68, 0.08, 0.055);
-    grin(c, 0.58, 0.1, 0.045);
-    E(c, -0.36, 0.62, 0.1, 0.13, "#78C6A3");
-    E(c, 0.2, 0.62, 0.1, 0.13, "#78C6A3");
+    // Soft rounded back plates tuck under the chunky body.
+    E(c, -0.46, 0.0, 0.1, 0.15, "#F3B6C7", 0.15);
+    E(c, -0.2, -0.1, 0.11, 0.17, "#F3B6C7", 0.06);
+    E(c, 0.08, -0.1, 0.11, 0.17, "#F3B6C7", -0.06);
+    E(c, 0.32, 0.0, 0.1, 0.15, "#F3B6C7", -0.15);
+    E(c, -0.66, 0.32, 0.17, 0.1, "#78C6A3", -0.3);
+    E(c, -0.08, 0.3, 0.56, 0.34, "#78C6A3");
+    CC(c, 0.46, 0.08, 0.26, "#78C6A3");
+    EF(c, -0.06, 0.44, 0.36, 0.18, "#DFF3EA");
+    bead(c, 0.4, 0.02, 0.055);
+    cheek(c, 0.56, 0.16, 0.055);
+    grin(c, 0.46, 0.18, 0.045);
+    E(c, -0.34, 0.62, 0.12, 0.09, "#78C6A3");
+    E(c, 0.18, 0.62, 0.12, 0.09, "#78C6A3");
   }
   function stPtero(c) {
     oc(c, "rgba(120,100,150,0.55)");
     ground(c);
-    E(c, 0, 0.06, 0.28, 0.42, "#B8A0D8");
-    TR(c, [-0.22, -0.08], [-0.86, -0.42], [-0.44, 0.32], "#D7C4EF");
-    TR(c, [0.22, -0.08], [0.86, -0.42], [0.44, 0.32], "#D7C4EF");
-    E(c, 0, -0.42, 0.26, 0.2, "#B8A0D8");
-    TR(c, [-0.08, -0.56], [0.08, -0.56], [0, -0.82], "#F6DCA8");
-    bead(c, -0.09, -0.46, 0.045); bead(c, 0.09, -0.46, 0.045);
-    TR(c, [-0.09, -0.38], [0.09, -0.38], [0, -0.23], "#F6A96C");
-    cheek(c, -0.19, -0.36, 0.045); cheek(c, 0.19, -0.36, 0.045);
-    E(c, -0.1, 0.48, 0.07, 0.14, "#B8A0D8");
-    E(c, 0.1, 0.48, 0.07, 0.14, "#B8A0D8");
+    // Wide soft wings with gently scalloped trailing edges, drawn first so
+    // the chunky body merges over their roots into one connected outline.
+    for (var s = -1; s <= 1; s += 2) {
+      c.beginPath();
+      c.moveTo(0.12 * s, -0.14);
+      c.quadraticCurveTo(0.56 * s, -0.5, 0.88 * s, -0.28);
+      c.quadraticCurveTo(0.8 * s, 0.04, 0.56 * s, 0.1);
+      c.quadraticCurveTo(0.4 * s, 0.26, 0.14 * s, 0.18);
+      c.closePath();
+      c.fillStyle = mapFill("#D7C4EF"); c.fill(); c.stroke();
+    }
+    // Rounded crest merges into the head via the head's fill.
+    TR(c, [-0.13, -0.5], [0.13, -0.5], [0, -0.84], "#F6DCA8", 0.24);
+    E(c, 0, 0.24, 0.29, 0.34, "#B8A0D8");
+    CC(c, 0, -0.28, 0.34, "#B8A0D8");
+    EF(c, 0, 0.32, 0.18, 0.22, "#EFE6FA");
+    bead(c, -0.12, -0.32, 0.05); bead(c, 0.12, -0.32, 0.05);
+    TR(c, [-0.08, -0.2], [0.08, -0.2], [0, -0.06], "#F6A96C", 0.3);
+    cheek(c, -0.23, -0.2, 0.05); cheek(c, 0.23, -0.2, 0.05);
+    E(c, -0.12, 0.56, 0.09, 0.09, "#B8A0D8");
+    E(c, 0.12, 0.56, 0.09, 0.09, "#B8A0D8");
   }
 
   // ---------- mermaid cove ----------
   function stMermaid(c) {
     oc(c, "rgba(80,130,150,0.55)");
     ground(c);
-    c.beginPath(); c.moveTo(-0.16, 0.3); c.quadraticCurveTo(0.18, 0.5, 0.02, 0.82); c.stroke();
-    TR(c, [0.02, 0.82], [-0.18, 0.58], [0.16, 0.58], "#79D1C3");
-    E(c, 0, 0.28, 0.22, 0.34, "#79D1C3");
-    E(c, 0, -0.1, 0.24, 0.28, "#F4C7A1");
-    CC(c, 0, -0.48, 0.26, "#F4C7A1");
-    for (var i = 0; i < 8; i++) CC(c, -0.24 + i * 0.07, -0.63 + Math.sin(i) * 0.04, 0.09, "#9B6BCB");
-    E(c, -0.34, 0.04, 0.11, 0.22, "#F4C7A1", 0.35);
-    E(c, 0.34, 0.04, 0.11, 0.22, "#F4C7A1", -0.35);
-    bead(c, -0.09, -0.5, 0.04); bead(c, 0.09, -0.5, 0.04);
-    cheek(c, -0.16, -0.4, 0.05); cheek(c, 0.16, -0.4, 0.05);
-    catMouth(c, 0, -0.39, 0.03);
+    // Chibi mermaid: big round head, little body, chunky tail with soft
+    // fluke lobes that tuck under it.
+    E(c, -0.14, 0.62, 0.15, 0.09, "#79D1C3", 0.55);
+    E(c, 0.14, 0.62, 0.15, 0.09, "#79D1C3", -0.55);
+    E(c, 0, 0.32, 0.2, 0.32, "#79D1C3");
+    E(c, 0, 0.06, 0.19, 0.18, "#F4C7A1");
+    E(c, -0.26, 0.12, 0.09, 0.15, "#F4C7A1", 0.4);
+    E(c, 0.26, 0.12, 0.09, 0.15, "#F4C7A1", -0.4);
+    // Wavy hair: a scalloped halo of bumps peeking out around the head.
+    for (var i = 0; i < 6; i++) {
+      var t = Math.PI * (0.04 + i * 0.184);
+      CC(c, -Math.cos(t) * 0.28, -0.26 - Math.sin(t) * 0.26, 0.16, "#9B6BCB");
+    }
+    CC(c, 0, -0.24, 0.32, "#F4C7A1");
+    bead(c, -0.11, -0.24, 0.05); bead(c, 0.11, -0.24, 0.05);
+    cheek(c, -0.21, -0.14, 0.05); cheek(c, 0.21, -0.14, 0.05);
+    catMouth(c, 0, -0.13, 0.032);
   }
   function stSeahorse(c) {
     oc(c, "rgba(90,140,150,0.55)");
@@ -391,19 +438,21 @@ window.MochiPals = (function () {
     c.arc(0.05, 0.42, 0.3, 1.5 * Math.PI, 0.35 * Math.PI);
     c.arc(0.05, 0.42, 0.14, 0.35 * Math.PI, 1.5 * Math.PI, true);
     c.closePath(); c.fillStyle = mapFill("#7EC9D4"); c.fill(); c.stroke();
-    E(c, 0.05, -0.18, 0.32, 0.46, "#7EC9D4");
-    // Coronet bumps and trunk snout go under the head so they merge into one
-    // connected silhouette; the head's fill absorbs the overlap.
-    CC(c, 0.0, -0.72, 0.055, "#F6C6D5");
-    CC(c, 0.13, -0.77, 0.055, "#F6C6D5");
-    CC(c, 0.26, -0.72, 0.055, "#F6C6D5");
-    E(c, 0.46, -0.5, 0.16, 0.065, "#7EC9D4", -0.2);
-    E(c, 0.16, -0.56, 0.26, 0.21, "#7EC9D4");
-    for (var i = 0; i < 4; i++) TR(c, [-0.16, -0.48 + i * 0.2], [-0.44, -0.36 + i * 0.2], [-0.16, -0.26 + i * 0.2], "#F6C6D5");
-    EF(c, 0.14, -0.14, 0.16, 0.3, "#DFF3F5");
-    bead(c, 0.2, -0.58, 0.05);
-    grin(c, 0.33, -0.43, 0.035);
-    cheek(c, 0.02, -0.56, 0.05);
+    // Soft petal fins tuck behind the round tummy.
+    E(c, -0.32, -0.28, 0.1, 0.16, "#F6C6D5", 0.5);
+    E(c, -0.38, -0.02, 0.1, 0.16, "#F6C6D5", 0.2);
+    E(c, -0.32, 0.22, 0.1, 0.16, "#F6C6D5", -0.15);
+    E(c, -0.02, 0.0, 0.29, 0.42, "#7EC9D4");
+    // Coronet bumps and a rounded snout merge into the head's fill.
+    CC(c, -0.08, -0.62, 0.07, "#F6C6D5");
+    CC(c, 0.06, -0.67, 0.07, "#F6C6D5");
+    CC(c, 0.2, -0.61, 0.07, "#F6C6D5");
+    E(c, 0.36, -0.4, 0.15, 0.08, "#7EC9D4", -0.1);
+    CC(c, 0.05, -0.42, 0.27, "#7EC9D4");
+    EF(c, 0, 0.06, 0.15, 0.26, "#DFF3F5");
+    bead(c, 0.13, -0.46, 0.05);
+    grin(c, 0.3, -0.34, 0.035);
+    cheek(c, -0.03, -0.34, 0.05);
   }
   function stJelly(c) {
     oc(c, "rgba(130,105,165,0.55)");
@@ -421,14 +470,18 @@ window.MochiPals = (function () {
   function stDolphin(c) {
     oc(c, "rgba(80,120,165,0.55)");
     ground(c);
-    E(c, 0.02, 0.03, 0.62, 0.28, "#87BFE8", -0.15);
-    TR(c, [-0.52, 0.04], [-0.86, -0.2], [-0.74, 0.22], "#87BFE8");
-    TR(c, [0, -0.18], [0.18, -0.54], [0.25, -0.14], "#87BFE8");
-    E(c, 0.56, -0.04, 0.22, 0.13, "#87BFE8", -0.1);
-    bead(c, 0.46, -0.09, 0.045);
-    cheek(c, 0.58, 0.02, 0.045);
-    grin(c, 0.6, 0.04, 0.04);
-    EF(c, 0.02, 0.2, 0.22, 0.08, "#D9F2FF", -0.15);
+    // Round happy dolphin: soft tail lobes, petal dorsal fin, and a snout
+    // bump all tuck under the chunky body.
+    E(c, -0.6, -0.12, 0.15, 0.09, "#87BFE8", 0.75);
+    E(c, -0.68, 0.06, 0.15, 0.09, "#87BFE8", -0.35);
+    E(c, 0, -0.3, 0.1, 0.15, "#87BFE8", 0.45);
+    E(c, 0.62, 0.1, 0.12, 0.08, "#87BFE8", 0.1);
+    E(c, 0.02, 0.06, 0.56, 0.3, "#87BFE8", -0.08);
+    EF(c, 0.06, 0.22, 0.3, 0.12, "#D9F2FF", -0.08);
+    E(c, 0.08, 0.3, 0.13, 0.08, "#87BFE8", 0.45);
+    bead(c, 0.36, -0.06, 0.05);
+    cheek(c, 0.48, 0.06, 0.05);
+    grin(c, 0.38, 0.06, 0.045);
   }
 
   // ---------- halloween ----------
@@ -439,9 +492,9 @@ window.MochiPals = (function () {
     E(c, 0.22, 0.15, 0.34, 0.46, "#F2A04B");
     E(c, 0, 0.15, 0.38, 0.5, "#FFB45C");
     TR(c, [-0.1, -0.36], [0.1, -0.36], [0, -0.66], "#7DA35C");
-    TR(c, [-0.2, 0.0], [-0.05, -0.1], [-0.05, 0.1], "#4A3B36");
-    TR(c, [0.2, 0.0], [0.05, -0.1], [0.05, 0.1], "#4A3B36");
-    catMouth(c, 0, 0.24, 0.09);
+    bead(c, -0.15, 0.02, 0.06); bead(c, 0.15, 0.02, 0.06);
+    cheek(c, -0.3, 0.14, 0.07); cheek(c, 0.3, 0.14, 0.07);
+    catMouth(c, 0, 0.16, 0.05);
   }
   function stGhost(c) {
     oc(c, "rgba(135,130,155,0.55)");
@@ -462,11 +515,16 @@ window.MochiPals = (function () {
   function stWitchCat(c) {
     oc(c, "rgba(90,80,100,0.55)");
     ground(c);
-    TR(c, [-0.5, -0.22], [0, -0.82], [0.5, -0.22], "#7B5AA6");
-    E(c, 0, -0.22, 0.62, 0.08, "#7B5AA6");
-    TR(c, [-0.42, -0.04], [-0.34, -0.34], [-0.16, -0.12], "#4B4656");
-    TR(c, [0.42, -0.04], [0.34, -0.34], [0.16, -0.12], "#4B4656");
+    // Ears first (wide-set, clear of the hat brim) so they merge into the
+    // head outline instead of crossing the hat.
+    TR(c, [-0.46, 0.06], [-0.44, -0.34], [-0.13, -0.18], "#4B4656", 0.16);
+    TR(c, [0.46, 0.06], [0.44, -0.34], [0.13, -0.18], "#4B4656", 0.16);
     CC(c, 0, 0.22, 0.48, "#4B4656");
+    // Soft witch hat: gently curved cone with a bobble tip, then a chunky
+    // brim that sits on the head and cleanly covers the cone base.
+    TR(c, [-0.28, -0.2], [0.28, -0.2], [0.04, -0.76], "#7B5AA6", -0.08);
+    CC(c, 0.05, -0.77, 0.07, "#F6C6D5");
+    E(c, 0, -0.18, 0.38, 0.09, "#7B5AA6");
     bead(c, -0.17, 0.12, 0.055); bead(c, 0.17, 0.12, 0.055);
     cheek(c, -0.32, 0.24, 0.06); cheek(c, 0.32, 0.24, 0.06);
     catMouth(c, 0, 0.24, 0.045);
@@ -475,11 +533,20 @@ window.MochiPals = (function () {
   function stBat(c) {
     oc(c, "rgba(80,75,95,0.55)");
     ground(c);
-    TR(c, [-0.14, -0.3], [-0.26, -0.58], [-0.02, -0.38], "#5C5674");
-    TR(c, [0.14, -0.3], [0.26, -0.58], [0.02, -0.38], "#5C5674");
-    CC(c, 0, 0.02, 0.34, "#5C5674");
-    TR(c, [-0.3, -0.04], [-0.86, -0.36], [-0.66, 0.3], "#7A7294");
-    TR(c, [0.3, -0.04], [0.86, -0.36], [0.66, 0.3], "#7A7294");
+    // Round wings with two gentle scallops, drawn first so the chubby body
+    // merges over their roots.
+    for (var s = -1; s <= 1; s += 2) {
+      c.beginPath();
+      c.moveTo(0.18 * s, -0.12);
+      c.quadraticCurveTo(0.58 * s, -0.46, 0.86 * s, -0.22);
+      c.quadraticCurveTo(0.84 * s, 0.08, 0.6 * s, 0.12);
+      c.quadraticCurveTo(0.46 * s, 0.32, 0.22 * s, 0.2);
+      c.closePath();
+      c.fillStyle = mapFill("#7A7294"); c.fill(); c.stroke();
+    }
+    TR(c, [-0.28, -0.16], [-0.3, -0.52], [-0.04, -0.32], "#5C5674", 0.18);
+    TR(c, [0.28, -0.16], [0.3, -0.52], [0.04, -0.32], "#5C5674", 0.18);
+    CC(c, 0, 0.02, 0.36, "#5C5674");
     bead(c, -0.12, -0.04, 0.05); bead(c, 0.12, -0.04, 0.05);
     cheek(c, -0.22, 0.1, 0.045); cheek(c, 0.22, 0.1, 0.045);
     grin(c, 0, 0.08, 0.04);
@@ -522,12 +589,12 @@ window.MochiPals = (function () {
   function stTree(c) {
     oc(c, "rgba(70,120,75,0.55)");
     ground(c);
+    E(c, 0, 0.66, 0.13, 0.16, "#A9784D");
     TR(c, [0, -0.78], [-0.42, -0.18], [0.42, -0.18], "#7FC46B");
     TR(c, [0, -0.5], [-0.54, 0.14], [0.54, 0.14], "#69B65E");
     TR(c, [0, -0.18], [-0.66, 0.58], [0.66, 0.58], "#5FA855");
-    E(c, 0, 0.7, 0.14, 0.16, "#A9784D");
     CC(c, -0.22, -0.08, 0.055, "#F48FB1"); CC(c, 0.25, 0.12, 0.055, "#FFE082"); CC(c, -0.1, 0.34, 0.055, "#64B5F6");
-    TR(c, [0, -0.94], [-0.08, -0.78], [0.08, -0.78], "#FFE082");
+    CC(c, 0, -0.84, 0.09, "#FFE082");
   }
   function stSantaBear(c) {
     oc(c, "rgba(120,85,55,0.55)");
