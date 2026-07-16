@@ -227,10 +227,10 @@
       b.setAttribute("aria-pressed", on ? "true" : "false");
     });
     // mirror the active tool onto the mobile mini toolbar
-    var mu = document.getElementById("miniToolUse");
+    var mu = document.getElementById("miniToolEmoji");
     if (mu) {
-      var map = { pencil: "ic-pencil", marker: "ic-marker", crayon: "ic-crayon", spray: "ic-spray", fill: "ic-fill", eraser: "ic-eraser" };
-      mu.setAttribute("href", "#" + (map[tool] || "ic-pencil"));
+      var emap = { pencil: "✏️", marker: "🖊️", crayon: "🖍️", spray: "💨", fill: "🪣", eraser: "🧽", stamp: "✨" };
+      mu.textContent = emap[tool] || "✏️";
     }
     var me = document.getElementById("miniEraser");
     if (me) me.setAttribute("aria-pressed", tool === "eraser" ? "true" : "false");
