@@ -153,11 +153,21 @@
   }
 
   var sizeIn = document.getElementById("size"), previewDot = document.getElementById("previewDot");
+  var ccDot = document.getElementById("ccDot"), ccBtn = document.getElementById("currentColor");
+  function syncCurrentColor() {
+    if (ccDot) ccDot.style.background = shade;
+  }
+  // tapping the current-colour swatch jumps to the Colors panel
+  if (ccBtn) ccBtn.addEventListener("click", function () {
+    var t = document.querySelector('.tab[data-panel="panelColors"]');
+    if (t) t.click();
+  });
   function updatePreview() {
     var d = Math.min(size, 30);
     previewDot.style.width = d + "px";
     previewDot.style.height = d + "px";
     previewDot.style.background = shade;
+    syncCurrentColor();
   }
   sizeIn.addEventListener("input", function () { size = Math.round(+sizeIn.value); updatePreview(); });
   renderPalette(BASES, BASE_NAMES);
@@ -166,7 +176,9 @@
   var toolsEl = document.getElementById("tools");
   function markTool() {
     toolsEl.querySelectorAll(".tbtn[data-tool]").forEach(function (b) {
-      b.classList.toggle("on", b.getAttribute("data-tool") === tool);
+      var on = b.getAttribute("data-tool") === tool;
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
     });
     if (tool !== "stamp") markPal(null);
   }
@@ -322,25 +334,33 @@
   });
 
   // ---------- undo / redo / clear / save ----------
+  var undoBtn = document.getElementById("undoBtn"), redoBtn = document.getElementById("redoBtn");
+  function updateHistoryButtons() {
+    undoBtn.disabled = undoStack.length === 0;
+    redoBtn.disabled = redoStack.length === 0;
+  }
   function pushUndo() {
     try {
       undoStack.push(ctx.getImageData(0, 0, W, H));
       if (undoStack.length > 15) undoStack.shift();
       redoStack = [];
     } catch (e) { }
+    updateHistoryButtons();
   }
-  document.getElementById("undoBtn").addEventListener("click", function () {
+  undoBtn.addEventListener("click", function () {
     var im = undoStack.pop();
-    if (!im) { toast("Nothing to undo"); return; }
+    if (!im) { toast("Nothing to undo"); updateHistoryButtons(); return; }
     try { redoStack.push(ctx.getImageData(0, 0, W, H)); } catch (e) { }
     ctx.putImageData(im, 0, 0);
+    updateHistoryButtons();
     scheduleSave();
   });
-  document.getElementById("redoBtn").addEventListener("click", function () {
+  redoBtn.addEventListener("click", function () {
     var im = redoStack.pop();
-    if (!im) { toast("Nothing to redo"); return; }
+    if (!im) { toast("Nothing to redo"); updateHistoryButtons(); return; }
     try { undoStack.push(ctx.getImageData(0, 0, W, H)); } catch (e) { }
     ctx.putImageData(im, 0, 0);
+    updateHistoryButtons();
     scheduleSave();
   });
   document.getElementById("clearBtn").addEventListener("click", function () {
@@ -556,6 +576,8 @@
     markPal(stampBtns[startIdx + 1]);
     setHint(pageName + " is ready to color! Grab the paint can to fill areas, or shade with the brushes.");
     undoStack = [];
+    updateHistoryButtons();
+    syncCurrentColor();
     hideSplash();
   }
   boot();

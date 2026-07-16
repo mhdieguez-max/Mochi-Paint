@@ -74,6 +74,37 @@ body::after{width:380px;height:380px;background:#D7E5FB;bottom:-130px;right:-130
 .rail-history{display:flex;flex-direction:column;gap:6px;margin-top:auto;
   padding-top:8px;border-top:1px solid rgba(150,120,160,.16)}
 .rail .ibtn{width:100%;height:44px;font-size:18px;border-radius:14px}
+
+/* ---------- Phase 2: inline-SVG tool icons + control states ---------- */
+.ic{width:26px;height:26px;display:block;pointer-events:none}
+.ic-sm{width:20px;height:20px;display:block}
+.rail .tbtn em{display:none}                 /* legacy emoji fallback off */
+.rail .tbtn{position:relative}
+.rail .tbtn:hover{background:#FBEFF5}
+.rail .tbtn:active{transform:scale(.94)}
+.rail .ibtn:active{transform:scale(.9)}
+/* selected tool: not colour-alone — bold ring + checkmark badge + aria-pressed */
+.rail .tbtn[aria-pressed="true"]{background:#FDEBF2;border-color:#E58AAE;box-shadow:0 2px 8px rgba(220,140,180,.30)}
+.rail .tbtn[aria-pressed="true"]::after{content:"";position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:50%;
+  background:#5A4A42 url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path d='M2.6 6.3l2.1 2.1 4.6-4.8' fill='none' stroke='white' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/></svg>") center/11px no-repeat;
+  box-shadow:0 0 0 2px #fff}
+/* disabled undo/redo */
+.rail .ibtn:disabled{opacity:.38;cursor:default;box-shadow:none}
+.rail .ibtn:disabled:hover{background:rgba(255,255,255,.62)}
+.rail .ibtn:disabled:active{transform:none}
+/* current-colour indicator */
+.rail-color{display:flex;justify-content:center;padding-top:8px;border-top:1px solid rgba(150,120,160,.16)}
+.cc-btn{width:44px;height:44px;border-radius:14px;border:2px solid #EADFF0;background:#fff;
+  display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;transition:transform .12s,border-color .15s}
+.cc-btn:hover{border-color:#F4A7C3}
+.cc-btn:active{transform:scale(.92)}
+.cc-dot{width:26px;height:26px;border-radius:50%;background:#F06292;
+  box-shadow:inset 0 0 0 1.5px rgba(90,74,66,.28),0 0 0 2px #fff}
+/* visible keyboard focus across every control */
+.tbtn:focus-visible,.ibtn:focus-visible,.cc-btn:focus-visible,.tab:focus-visible,
+.chip:focus-visible,.swatch:focus-visible,.shade:focus-visible,.stamp:focus-visible,
+#size:focus-visible{outline:3px solid #4AA3E8;outline-offset:2px}
+@media(prefers-reduced-motion:reduce){.rail .tbtn,.rail .ibtn,.cc-btn{transition:none}}
 #board{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 #lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 #cursorRing{position:absolute;border:1.5px solid rgba(90,74,66,.55);border-radius:50%;pointer-events:none;display:none;transform:translate(-50%,-50%)}
@@ -156,15 +187,15 @@ dialog input:focus{outline:none;border-color:#F4A7C3}
   .ibtn{width:42px;height:42px;font-size:20px}
   .dock{border-radius:22px;margin:0 12px 12px}
   /* full toolbar beside the canvas on tablet + desktop */
-  .rail{width:94px;margin-left:12px;padding:9px 8px;gap:8px}
-  .rail .tbtn{min-height:48px;padding:5px 5px;gap:0}
-  .rail .tbtn span{display:block;font-size:11px}
-  .rail .tbtn em{font-size:22px}
-  .rail-size{gap:5px;padding-top:7px}
-  .rail-size .lbl{font-size:12px}
-  .rail-size #preview{width:30px;height:30px}
-  .rail-history{gap:6px;padding-top:7px}
-  .rail .ibtn{width:100%;height:44px;font-size:20px}
+  .rail{width:96px;margin-left:12px;padding:9px 8px;gap:6px}
+  .rail .tbtn{min-height:44px;padding:3px 5px;gap:0}
+  .rail .tbtn span{display:block;font-size:10px;line-height:1.05}
+  .rail .ic{width:24px;height:24px}
+  .rail-color{padding-top:6px}
+  .rail-size{gap:3px;padding-top:6px}
+  .rail-size #preview{width:22px;height:22px}
+  .rail-history{gap:5px;padding-top:6px}
+  .rail .ibtn{width:100%;height:44px}
 }
 
 /* mobile landscape: trim chrome + use the compact icon rail to maximize canvas;
