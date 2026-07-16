@@ -7,7 +7,7 @@ body::before,body::after{content:"";position:fixed;border-radius:50%;filter:blur
 body::before{width:340px;height:340px;background:#FBD3E5;top:-90px;left:-110px}
 body::after{width:380px;height:380px;background:#D7E5FB;bottom:-130px;right:-130px}
 
-#app{position:relative;z-index:1;height:100dvh;display:flex;flex-direction:column;max-width:760px;margin:0 auto}
+#app{position:relative;z-index:1;height:100dvh;display:flex;flex-direction:column;max-width:760px;margin:0 auto;overflow:hidden}
 
 /* ---------- splash / loading screen ---------- */
 #splash{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;
@@ -50,8 +50,61 @@ body::after{width:380px;height:380px;background:#D7E5FB;bottom:-130px;right:-130
 .ibtn:hover{background:#fff}
 .ibtn:active{transform:scale(.88);background:#fff}
 
-.stage{flex:1;display:flex;min-height:0;padding:10px 12px 8px}
-.canvas-wrap{position:relative;flex:1;border-radius:22px;overflow:hidden;border:3px solid #FBD9E8;background:#fff;box-shadow:0 10px 30px rgba(180,140,180,.18)}
+.stage{flex:1;display:flex;min-height:0;
+  padding-top:10px;padding-bottom:8px;padding-left:12px;
+  padding-right:calc(12px + env(safe-area-inset-right))}
+.canvas-wrap{position:relative;flex:1;min-width:0;border-radius:22px;overflow:hidden;border:3px solid #FBD9E8;background:#fff;box-shadow:0 10px 30px rgba(180,140,180,.18)}
+
+/* ---------- right vertical tool rail (reserves layout space, never overlays) ---------- */
+.rail{flex:0 0 auto;width:60px;margin-left:10px;
+  display:flex;flex-direction:column;gap:8px;padding:8px 6px;
+  background:rgba(255,255,255,.82);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-radius:20px;box-shadow:0 8px 24px rgba(150,120,160,.14);
+  overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none}
+.rail::-webkit-scrollbar{display:none}
+.rail-tools{display:flex;flex-direction:column;gap:6px}
+.rail .tbtn{width:100%;min-width:0;min-height:44px;padding:7px 3px;gap:1px}
+.rail .tbtn span{display:none}
+.rail .tbtn em{font-size:23px}
+.rail-size{display:flex;flex-direction:column;align-items:center;gap:5px;
+  padding-top:8px;border-top:1px solid rgba(150,120,160,.16)}
+.rail-size .lbl{font-size:10px;font-weight:700;color:#8A7A74}
+.rail-size input{width:100%;accent-color:#F48FB1}
+.rail-history{display:flex;flex-direction:column;gap:6px;margin-top:auto;
+  padding-top:8px;border-top:1px solid rgba(150,120,160,.16)}
+.rail .ibtn{width:100%;height:44px;font-size:18px;border-radius:14px}
+
+/* ---------- Phase 2: inline-SVG tool icons + control states ---------- */
+.ic{width:26px;height:26px;display:block;pointer-events:none}
+.ic-sm{width:20px;height:20px;display:block}
+.rail .tbtn em{display:none}                 /* legacy emoji fallback off */
+.rail .tbtn{position:relative}
+.rail .tbtn:hover{background:#FBEFF5}
+.rail .tbtn:active{transform:scale(.94)}
+.rail .ibtn:active{transform:scale(.9)}
+/* selected tool: not colour-alone — bold ring + checkmark badge + aria-pressed */
+.rail .tbtn[aria-pressed="true"]{background:#FDEBF2;border-color:#E58AAE;box-shadow:0 2px 8px rgba(220,140,180,.30)}
+.rail .tbtn[aria-pressed="true"]::after{content:"";position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:50%;
+  background:#5A4A42 url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path d='M2.6 6.3l2.1 2.1 4.6-4.8' fill='none' stroke='white' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/></svg>") center/11px no-repeat;
+  box-shadow:0 0 0 2px #fff}
+/* disabled undo/redo */
+.rail .ibtn:disabled{opacity:.38;cursor:default;box-shadow:none}
+.rail .ibtn:disabled:hover{background:rgba(255,255,255,.62)}
+.rail .ibtn:disabled:active{transform:none}
+/* current-colour indicator */
+.rail-color{display:flex;justify-content:center;padding-top:8px;border-top:1px solid rgba(150,120,160,.16)}
+.cc-btn{width:44px;height:44px;border-radius:14px;border:2px solid #EADFF0;background:#fff;
+  display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;transition:transform .12s,border-color .15s}
+.cc-btn:hover{border-color:#F4A7C3}
+.cc-btn:active{transform:scale(.92)}
+.cc-dot{width:26px;height:26px;border-radius:50%;background:#F06292;
+  box-shadow:inset 0 0 0 1.5px rgba(90,74,66,.28),0 0 0 2px #fff}
+/* visible keyboard focus across every control */
+.tbtn:focus-visible,.ibtn:focus-visible,.cc-btn:focus-visible,.tab:focus-visible,
+.chip:focus-visible,.swatch:focus-visible,.shade:focus-visible,.stamp:focus-visible,
+#size:focus-visible{outline:3px solid #4AA3E8;outline-offset:2px}
+@media(prefers-reduced-motion:reduce){.rail .tbtn,.rail .ibtn,.cc-btn{transition:none}}
 #board{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 #lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 #cursorRing{position:absolute;border:1.5px solid rgba(90,74,66,.55);border-radius:50%;pointer-events:none;display:none;transform:translate(-50%,-50%)}
@@ -122,14 +175,45 @@ dialog input:focus{outline:none;border-color:#F4A7C3}
 @media(max-width:480px){
   .logo{padding:5px 10px}
   .logo-text{display:none}
-  /* keep all 8 app-bar buttons inside a 360px-wide screen */
+  /* keep the header buttons comfortable inside a 360px-wide screen */
   .appbar{padding-left:10px;padding-right:10px}
   .actions{gap:2px}
   .ibtn{width:32px;height:32px;font-size:15px;border-radius:11px}
 }
 
 @media(min-width:768px){
+  #app{max-width:940px}
   .logo{font-size:24px}
   .ibtn{width:42px;height:42px;font-size:20px}
   .dock{border-radius:22px;margin:0 12px 12px}
+  /* full toolbar beside the canvas on tablet + desktop */
+  .rail{width:96px;margin-left:12px;padding:9px 8px;gap:6px}
+  .rail .tbtn{min-height:44px;padding:3px 5px;gap:0}
+  .rail .tbtn span{display:block;font-size:10px;line-height:1.05}
+  .rail .ic{width:24px;height:24px}
+  .rail-color{padding-top:6px}
+  .rail-size{gap:3px;padding-top:6px}
+  .rail-size #preview{width:22px;height:22px}
+  .rail-history{gap:5px;padding-top:6px}
+  .rail .ibtn{width:100%;height:44px}
+}
+
+/* mobile landscape: trim chrome + use the compact icon rail to maximize canvas;
+   the rail scrolls so every control stays reachable on a short screen */
+@media(orientation:landscape) and (max-height:500px){
+  .appbar{padding-top:calc(4px + env(safe-area-inset-top));padding-bottom:6px;border-radius:0 0 16px 16px}
+  .logo{font-size:15px;padding:4px 9px}
+  .stage{padding-top:6px;padding-bottom:5px}
+  .rail{width:60px;margin-left:8px;gap:6px;padding:6px 5px}
+  .rail .tbtn{min-height:44px;padding:5px 3px}
+  .rail .tbtn span{display:none}
+  .rail .tbtn em{font-size:21px}
+  .rail-size{padding-top:6px}
+  .rail-size .lbl{font-size:10px}
+  .rail-size #preview{width:30px;height:30px}
+  .rail-history{padding-top:6px}
+  .rail .ibtn{height:44px}
+  .dock{padding-top:6px}
+  .dock .tabs{margin-bottom:5px}
+  .dock .panel.on{min-height:0}
 }
