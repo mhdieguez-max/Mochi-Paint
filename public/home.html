@@ -4,10 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Mochi Paint Coloring Pages</title>
+  <script>
+    // A refresh should always open at the top. Browsers restore the last
+    // scroll position, and a leftover #section hash from tapping a category
+    // pill re-scrolls to that section — both buried the hero on reload.
+    if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+    if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/animations.css?v=2">
+  <link rel="stylesheet" href="/animations.css?v=3">
   <style>
     *{box-sizing:border-box}
     html{scroll-behavior:smooth}
@@ -58,14 +65,6 @@
   </style>
 </head>
 <body>
-  <div class="bg-floaties" aria-hidden="true">
-    <span class="floaty f1">🌸</span>
-    <span class="floaty f2">✨</span>
-    <span class="floaty f3">🍡</span>
-    <span class="floaty f4">💮</span>
-    <span class="floaty f5">✨</span>
-    <span class="floaty f6">🌷</span>
-  </div>
   <div class="shell">
     <nav class="nav">
       <div class="brand"><span>🍡</span><span>Mochi Paint</span></div>
@@ -82,9 +81,6 @@
           <span class="spark s2">✨</span>
           <span class="spark s3">⭐</span>
           <span class="spark s4">✨</span>
-          <span class="heart h1">💛</span>
-          <span class="heart h2">💗</span>
-          <span class="heart h3">💙</span>
         </div>
       </div>
       <h1>Grab a color, meet a pal,<br>make something cute</h1>
@@ -120,7 +116,6 @@
       section.style.setProperty("--bg", group.bg);
       section.innerHTML = `
         <div class="section-head">
-          <span>${group.icon}</span>
           <h2>${group.title}</h2>
           <p class="tagline">${group.tagline}</p>
         </div>
@@ -160,7 +155,6 @@
     forestSection.style.setProperty("--bg", "linear-gradient(160deg,#EAF7DD,#FFF9E9)");
     forestSection.innerHTML = `
       <div class="section-head">
-        <span>🌿</span>
         <h2>Rainforest Pals</h2>
         <p class="tagline">Gentle jungle and woodland friends — tap one to color it right here, or grab the <a href="/forest-kawaii.html" style="color:inherit">printable versions</a>.</p>
       </div>
