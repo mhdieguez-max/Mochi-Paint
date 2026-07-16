@@ -50,7 +50,19 @@
   var lastDrawTool = "pencil";
   var stampFn = null, stampLabel = "", stampBtns = [];
   var palMode = "page";
-  var pageFn = null, pageName = "", lineData = null;
+  var pageFn = null, pageImg = null, pageName = "", lineData = null;
+
+  // Forest Pals: finished PNG line-art coloring pages (see /coloring-pages/forest).
+  // They open in this same studio like every other pal — the PNG becomes the
+  // protected line-art layer, so brushes and the paint can respect its outlines.
+  var FOREST_PALS = [
+    { slug: "ellie", name: "Ellie", species: "elephant", src: "coloring-pages/forest/ellie-elephant.png", thumb: "coloring-pages/forest/previews/ellie-elephant-color.png" },
+    { slug: "suki", name: "Suki", species: "snake", src: "coloring-pages/forest/suki-snake.png", thumb: "coloring-pages/forest/previews/suki-snake-color.png" },
+    { slug: "tora", name: "Tora", species: "tiger", src: "coloring-pages/forest/tora-tiger.png", thumb: "coloring-pages/forest/previews/tora-tiger-color.png" },
+    { slug: "mika", name: "Mika", species: "cat", src: "coloring-pages/forest/mika-cat.png", thumb: "coloring-pages/forest/previews/mika-cat-color.png" },
+    { slug: "momo", name: "Momo", species: "monkey", src: "coloring-pages/forest/momo-monkey.png", thumb: "coloring-pages/forest/previews/momo-monkey-color.png" },
+    { slug: "leo", name: "Leo", species: "lion", src: "coloring-pages/forest/leo-lion.png", thumb: "coloring-pages/forest/previews/leo-lion-color.png" }
+  ];
   var undoStack = [], redoStack = [], drawing = false, pts = [], snap = null;
 
   var hint = document.getElementById("hint");
@@ -278,9 +290,17 @@
 
   function drawPage() {
     lctx.clearRect(0, 0, W, H);
-    if (!pageFn) { lineData = null; return; }
-    var s = Math.min(W, H) * 0.46;
-    withChar(lctx, W / 2, H / 2, s, pageFn, true);
+    if (!pageFn && !pageImg) { lineData = null; return; }
+    if (pageImg) {
+      // image-based coloring page (e.g. Forest Pals): fit centred with a margin
+      var m = Math.min(W, H) * 0.04;
+      var sc = Math.min((W - 2 * m) / pageImg.width, (H - 2 * m) / pageImg.height);
+      var dw = pageImg.width * sc, dh = pageImg.height * sc;
+      lctx.drawImage(pageImg, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    } else {
+      var s = Math.min(W, H) * 0.46;
+      withChar(lctx, W / 2, H / 2, s, pageFn, true);
+    }
     // Punch out the white construction fills so only the outlines remain —
     // paint on the board layer below must show through the page interior.
     var img = lctx.getImageData(0, 0, W, H), d = img.data;
@@ -291,7 +311,7 @@
     lineData = d;
   }
   function loadPage(fn, name, slug) {
-    pageFn = fn; pageName = name;
+    pageFn = fn; pageImg = null; pageName = name;
     currentSlug = slug || "blank";
     pushUndo();
     ctx.fillStyle = "#ffffff";
@@ -305,6 +325,29 @@
       setHint("Blank page — free drawing time!");
       toast("Fresh blank page ✨");
     }
+  }
+  // Image-based coloring pages (Forest Pals): same flow as procedural pals,
+  // but the line art comes from a PNG whose dark pixels become the outlines.
+  var forestImgCache = {};
+  function loadImagePage(pal) {
+    function apply(img) {
+      pageImg = img; pageFn = null;
+      pageName = pal.name + " the " + pal.species;
+      currentSlug = pal.slug;
+      pushUndo();
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, W, H);
+      drawPage();
+      restoreProgress();
+      setHint(pageName + " is ready to color! Grab the paint can to fill areas, or shade with the brushes.");
+      toast(pageName + " coloring page loaded 🎨");
+    }
+    if (forestImgCache[pal.slug]) { apply(forestImgCache[pal.slug]); return; }
+    setHint("Loading " + pal.name + "…");
+    var img = new Image();
+    img.onload = function () { forestImgCache[pal.slug] = img; apply(img); };
+    img.onerror = function () { toast("Could not load " + pal.name + " — try again"); };
+    img.src = pal.src;
   }
 
   // ---------- dock tabs ----------
@@ -368,6 +411,32 @@
     stampBtns.push(b);
     grid.appendChild(b);
   });
+  // Forest Pals in the same grid: coloring pages only (they're finished PNG
+  // line art, not stampable vector pals), so they hide in sticker-stamp mode.
+  var forestBtns = [];
+  var forestBtnBySlug = {};
+  FOREST_PALS.forEach(function (pal) {
+    var b = document.createElement("button");
+    b.className = "stamp";
+    b.title = pal.name + " the " + pal.species;
+    var im = document.createElement("img");
+    im.src = pal.thumb;
+    im.alt = "";
+    im.loading = "lazy";
+    im.style.cssText = "width:72px;height:72px;object-fit:contain;display:block;border-radius:12px;";
+    var label = document.createElement("b");
+    label.textContent = pal.name;
+    b.appendChild(im);
+    b.appendChild(label);
+    b.addEventListener("click", function () {
+      loadImagePage(pal);
+      markPal(b);
+    });
+    forestBtns.push(b);
+    forestBtnBySlug[pal.slug] = b;
+    stampBtns.push(b);
+    grid.appendChild(b);
+  });
   function markPal(el) {
     stampBtns.forEach(function (s) { s.classList.remove("on"); });
     if (el) el.classList.add("on");
@@ -379,12 +448,14 @@
     palMode = "page";
     modePage.classList.add("on"); modeStamp.classList.remove("on");
     blankBtn.hidden = false;
+    forestBtns.forEach(function (b) { b.hidden = false; });
     setHint("Tap a pal to open them as a coloring page!");
   });
   modeStamp.addEventListener("click", function () {
     palMode = "stamp";
     modeStamp.classList.add("on"); modePage.classList.remove("on");
     blankBtn.hidden = true;
+    forestBtns.forEach(function (b) { b.hidden = true; });
     setHint("Tap a pal, then tap the canvas to stamp them anywhere!");
   });
 
@@ -467,7 +538,16 @@
     var g = t.getContext("2d");
     g.fillStyle = "#ffffff";
     g.fillRect(0, 0, t.width, t.height);
-    if (pageFn) {
+    if (pageImg) {
+      // fresh printable copy of the image-based line art
+      var isc = Math.min(1240 / pageImg.width, 1460 / pageImg.height);
+      var idw = pageImg.width * isc, idh = pageImg.height * isc;
+      g.drawImage(pageImg, (t.width - idw) / 2, 110, idw, idh);
+      g.fillStyle = "#5A4A42";
+      g.font = "48px 'Baloo 2', cursive";
+      g.textAlign = "center";
+      g.fillText("Mochi Paint · " + pageName, 700, 1680);
+    } else if (pageFn) {
       withChar(g, 700, 840, 620, pageFn, true);
       g.fillStyle = "#5A4A42";
       g.font = "48px 'Baloo 2', cursive";
@@ -673,16 +753,41 @@
   }
   markTool();
   initCanvas();
-  // Deep link from the home page: /?pal=usagi opens that pal's coloring page.
-  var startIdx = 0;
+  // Deep link from the home page: /?pal=usagi opens that pal's coloring page,
+  // and /?pal=ellie (etc.) opens a Forest Pals image page in the same studio.
+  var startIdx = 0, startForest = null;
   try {
     var palParam = (new URLSearchParams(location.search).get("pal") || "").toLowerCase();
     STAMPS.forEach(function (st, i) {
       if (st[0].toLowerCase() === palParam) startIdx = i;
     });
+    FOREST_PALS.forEach(function (p) {
+      if (p.slug === palParam) startForest = p;
+    });
   } catch (err) {}
   function boot() {
     if (!ready) { requestAnimationFrame(boot); return; }
+    if (startForest) {
+      var pal = startForest;
+      pageName = pal.name + " the " + pal.species;
+      currentSlug = pal.slug;
+      var img = new Image();
+      img.onload = function () {
+        forestImgCache[pal.slug] = img;
+        pageImg = img; pageFn = null;
+        drawPage();
+        restoreProgress();
+        markPal(forestBtnBySlug[pal.slug]);
+        setHint(pageName + " is ready to color! Grab the paint can to fill areas, or shade with the brushes.");
+        undoStack = [];
+        updateHistoryButtons();
+        hideSplash();
+      };
+      img.onerror = function () { startForest = null; boot(); };   // fall back to the default pal
+      img.src = pal.src;
+      syncCurrentColor();
+      return;
+    }
     pageFn = STAMPS[startIdx][2];
     pageName = STAMPS[startIdx][0] + " the " + STAMPS[startIdx][1];
     currentSlug = STAMPS[startIdx][0].toLowerCase();

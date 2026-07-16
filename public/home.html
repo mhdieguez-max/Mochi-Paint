@@ -144,7 +144,7 @@
       <div class="section-head">
         <span>🌿</span>
         <h2>Forest Pals</h2>
-        <p class="tagline">Gentle jungle and woodland friends ready for their own printable coloring adventures.</p>
+        <p class="tagline">Gentle jungle and woodland friends — tap one to color it right here, or grab the <a href="/forest-kawaii.html" style="color:inherit">printable versions</a>.</p>
       </div>
       <div class="grid"></div>
     `;
@@ -152,7 +152,7 @@
     forestPals.forEach((pal) => {
       const card = document.createElement("a");
       card.className = "card";
-      card.href = "/forest-kawaii.html#" + pal.slug;
+      card.href = "/?pal=" + encodeURIComponent(pal.slug);
       card.innerHTML = `
         <img class="art forest-art" src="${pal.image}" alt="${pal.name} the ${pal.species} coloring page" loading="lazy">
         <div class="name">${pal.name}</div>
