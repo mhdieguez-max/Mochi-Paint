@@ -33,7 +33,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=2">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 
@@ -58,9 +58,6 @@ setTimeout(function () {
     <span class="logo"><span class="bead" aria-hidden="true">🍡</span><span class="logo-text"> Mochi Paint</span></span>
     <div class="actions">
       <a class="ibtn" id="homeBtn" href="/home" title="Back to home" aria-label="Back to home" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;">🏡</a>
-      <button class="ibtn" id="undoBtn" title="Undo" aria-label="Undo">↩️</button>
-      <button class="ibtn" id="redoBtn" title="Redo" aria-label="Redo">↪️</button>
-      <button class="ibtn" id="clearBtn" title="Clear canvas" aria-label="Clear canvas">🗑️</button>
       <button class="ibtn" id="printBtn" title="Print coloring page" aria-label="Print coloring page">🖨️</button>
       <button class="ibtn" id="saveBtn" title="Save as PNG" aria-label="Save as PNG">💾</button>
       <button class="ibtn" id="shareBtn" title="Share to gallery" aria-label="Share to gallery" hidden>🌟</button>
@@ -75,17 +72,9 @@ setTimeout(function () {
       <div id="cursorRing"></div>
       <p class="hint" id="hint">Loading your coloring page…</p>
     </div>
-  </main>
 
-  <nav class="dock">
-    <div class="tabs" role="tablist">
-      <button class="tab on" data-panel="panelTools" role="tab">🖌️ Tools</button>
-      <button class="tab" data-panel="panelColors" role="tab">🎨 Colors</button>
-      <button class="tab" data-panel="panelPals" role="tab">🐾 Pals</button>
-    </div>
-
-    <div class="panel on" id="panelTools">
-      <div class="hstrip" id="tools" role="toolbar" aria-label="Drawing tools">
+    <aside class="rail" aria-label="Drawing toolbar">
+      <div class="rail-tools" id="tools" role="toolbar" aria-label="Drawing tools">
         <button class="tbtn" data-tool="pencil"><em>✏️</em><span>Pencil</span></button>
         <button class="tbtn" data-tool="marker"><em>🖊️</em><span>Marker</span></button>
         <button class="tbtn" data-tool="crayon"><em>🖍️</em><span>Crayon</span></button>
@@ -93,14 +82,26 @@ setTimeout(function () {
         <button class="tbtn" data-tool="fill"><em>🪣</em><span>Paint can</span></button>
         <button class="tbtn" data-tool="eraser"><em>🧽</em><span>Eraser</span></button>
       </div>
-      <div class="size-row">
-        <span>Size</span>
+      <div class="rail-size">
+        <span class="lbl">Size</span>
         <input type="range" id="size" min="2" max="40" value="10" step="1" aria-label="Brush and stamp size">
         <span id="preview"><span id="previewDot"></span></span>
       </div>
+      <div class="rail-history" role="group" aria-label="History">
+        <button class="ibtn" id="undoBtn" title="Undo" aria-label="Undo">↩️</button>
+        <button class="ibtn" id="redoBtn" title="Redo" aria-label="Redo">↪️</button>
+        <button class="ibtn" id="clearBtn" title="Clear canvas" aria-label="Clear canvas">🗑️</button>
+      </div>
+    </aside>
+  </main>
+
+  <nav class="dock">
+    <div class="tabs" role="tablist">
+      <button class="tab on" data-panel="panelColors" role="tab">🎨 Colors</button>
+      <button class="tab" data-panel="panelPals" role="tab">🐾 Pals</button>
     </div>
 
-    <div class="panel" id="panelColors">
+    <div class="panel on" id="panelColors">
       <div class="hstrip" id="palette" aria-label="Colors"></div>
       <div class="hstrip" id="shades" aria-label="Shades"></div>
     </div>
