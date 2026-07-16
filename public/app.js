@@ -47,6 +47,7 @@
 
   // ---------- state ----------
   var tool = "pencil", size = 10, color = "#F06292", shade = "#F06292";
+  var lastDrawTool = "pencil";
   var stampFn = null, stampLabel = "", stampBtns = [];
   var palMode = "page";
   var pageFn = null, pageName = "", lineData = null;
@@ -114,6 +115,7 @@
         renderShades();
         pal.querySelectorAll(".swatch").forEach(function (s) { s.classList.remove("on"); });
         b.classList.add("on");
+        highlightColor(null);
       });
       pal.appendChild(b);
     });
@@ -144,6 +146,7 @@
         shade = h;
         shadesEl.querySelectorAll(".shade").forEach(function (s) { s.classList.remove("on"); });
         b.classList.add("on");
+        highlightColor(null);
         updatePreview();
       });
       shadesEl.appendChild(b);
@@ -156,6 +159,8 @@
   var ccDot = document.getElementById("ccDot"), ccBtn = document.getElementById("currentColor");
   function syncCurrentColor() {
     if (ccDot) ccDot.style.background = shade;
+    var mc = document.getElementById("miniCcDot");
+    if (mc) mc.style.background = shade;
   }
   // tapping the current-colour swatch jumps to the Colors panel
   if (ccBtn) ccBtn.addEventListener("click", function () {
@@ -172,6 +177,47 @@
   sizeIn.addEventListener("input", function () { size = Math.round(+sizeIn.value); updatePreview(); });
   renderPalette(BASES, BASE_NAMES);
 
+  // ---------- Phase 3/4: easy-access colour swatches (rail) + mobile favourites ----------
+  var quickWrap = document.getElementById("quickColors");
+  var quickBtns = quickWrap ? [].slice.call(quickWrap.querySelectorAll(".qsw")) : [];
+  var miniFavBtns = [].slice.call(document.querySelectorAll("#miniFavs .mfav"));
+  function clearDockColorSel() {
+    pal.querySelectorAll(".swatch").forEach(function (s) { s.classList.remove("on"); });
+    shadesEl.querySelectorAll(".shade").forEach(function (s) { s.classList.remove("on"); });
+  }
+  // reflect the active colour on both the rail swatches and the mini favourites
+  function highlightColor(hex) {
+    var h = hex ? hex.toLowerCase() : null;
+    quickBtns.forEach(function (b) {
+      var on = h && b.getAttribute("data-color").toLowerCase() === h;
+      b.classList.toggle("on", !!on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    miniFavBtns.forEach(function (b) {
+      var on = h && b.getAttribute("data-color").toLowerCase() === h;
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+  }
+  function setColorHex(hex) {
+    color = hex; shade = hex;
+    highlightColor(hex);
+    clearDockColorSel();
+    updatePreview();   // syncs the current-colour swatches + size preview everywhere
+  }
+  quickBtns.forEach(function (b) {
+    b.addEventListener("click", function () { setColorHex(b.getAttribute("data-color")); });
+  });
+  miniFavBtns.forEach(function (b) {
+    b.addEventListener("click", function () { setColorHex(b.getAttribute("data-color")); });
+  });
+  var moreColorsBtn = document.getElementById("moreColors");
+  if (moreColorsBtn) moreColorsBtn.addEventListener("click", function () {
+    var t = document.querySelector('.tab[data-panel="panelColors"]');
+    if (t) t.click();                 // reveal the full pastel palette in the dock
+    var panel = document.getElementById("panelColors");
+    if (panel && panel.scrollIntoView) panel.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  });
+
   // ---------- tools ----------
   var toolsEl = document.getElementById("tools");
   function markTool() {
@@ -180,6 +226,15 @@
       b.classList.toggle("on", on);
       b.setAttribute("aria-pressed", on ? "true" : "false");
     });
+    // mirror the active tool onto the mobile mini toolbar
+    var mu = document.getElementById("miniToolUse");
+    if (mu) {
+      var map = { pencil: "ic-pencil", marker: "ic-marker", crayon: "ic-crayon", spray: "ic-spray", fill: "ic-fill", eraser: "ic-eraser" };
+      mu.setAttribute("href", "#" + (map[tool] || "ic-pencil"));
+    }
+    var me = document.getElementById("miniEraser");
+    if (me) me.setAttribute("aria-pressed", tool === "eraser" ? "true" : "false");
+    if (tool !== "eraser" && tool !== "stamp") lastDrawTool = tool;
     if (tool !== "stamp") markPal(null);
   }
   toolsEl.querySelectorAll(".tbtn[data-tool]").forEach(function (b) {
@@ -338,6 +393,8 @@
   function updateHistoryButtons() {
     undoBtn.disabled = undoStack.length === 0;
     redoBtn.disabled = redoStack.length === 0;
+    var mu = document.getElementById("miniUndo");
+    if (mu) mu.disabled = undoStack.length === 0;
   }
   function pushUndo() {
     try {
@@ -363,7 +420,21 @@
     updateHistoryButtons();
     scheduleSave();
   });
-  document.getElementById("clearBtn").addEventListener("click", function () {
+  // Clear needs a confirmation so a stray tap never wipes a child's drawing.
+  var clearBtn = document.getElementById("clearBtn");
+  var clearArmed = false, clearArmT = null;
+  function disarmClear() { clearArmed = false; clearBtn.classList.remove("armed"); clearTimeout(clearArmT); }
+  clearBtn.addEventListener("click", function () {
+    if (!clearArmed) {
+      clearArmed = true;
+      clearBtn.classList.add("armed");
+      clearBtn.setAttribute("title", "Tap again to clear");
+      toast("Tap the trash again to clear the whole page");
+      clearArmT = setTimeout(disarmClear, 2600);
+      return;
+    }
+    disarmClear();
+    clearBtn.setAttribute("title", "Clear canvas");
     pushUndo();
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, W, H);
@@ -478,16 +549,21 @@
     }
     ctx.globalAlpha = 1;
   }
-  // flood fill on the paint layer; outline pixels on the line layer act as walls
+  // Boundary-aware flood fill on the PAINT layer only. Outline pixels on the
+  // separate line-art layer (lineData, sampled once per page) act as walls, so
+  // paint can never cross or cover a protected outline. Returns how much was
+  // filled and whether the region reached the canvas edge (i.e. was not
+  // enclosed). A hard pixel cap keeps a runaway/leaked fill from freezing.
   function floodFill(x, y) {
     x = Math.max(0, Math.min(W - 1, Math.round(x)));
     y = Math.max(0, Math.min(H - 1, Math.round(y)));
-    if (lineData && lineData[(y * W + x) * 4 + 3] > 60) return;
+    if (lineData && lineData[(y * W + x) * 4 + 3] > 60) return { filled: 0, border: false, onLine: true };
     var img = ctx.getImageData(0, 0, W, H), d = img.data;
     var i0 = (y * W + x) * 4, tr = d[i0], tg = d[i0 + 1], tb = d[i0 + 2];
     var f = hexRgb(shade);
-    if (Math.abs(tr - f[0]) + Math.abs(tg - f[1]) + Math.abs(tb - f[2]) < 12) return;
+    if (Math.abs(tr - f[0]) + Math.abs(tg - f[1]) + Math.abs(tb - f[2]) < 12) return { filled: 0, border: false, onLine: false };
     var seen = new Uint8Array(W * H), stack = [x, y];
+    var filled = 0, border = false, MAX = W * H;   // seen[] already bounds work to O(W*H)
     while (stack.length) {
       var py = stack.pop(), px = stack.pop();
       if (px < 0 || py < 0 || px >= W || py >= H) continue;
@@ -498,9 +574,48 @@
       if (Math.abs(d[j] - tr) + Math.abs(d[j + 1] - tg) + Math.abs(d[j + 2] - tb) > 110) continue;
       seen[idx] = 1;
       d[j] = f[0]; d[j + 1] = f[1]; d[j + 2] = f[2]; d[j + 3] = 255;
+      filled++;
+      if (px === 0 || py === 0 || px === W - 1 || py === H - 1) border = true;
+      if (filled > MAX) break;
       stack.push(px + 1, py, px - 1, py, px, py + 1, px, py - 1);
     }
     ctx.putImageData(img, 0, 0);
+    return { filled: filled, border: border, onLine: false };
+  }
+
+  // Bucket click handler: shows feedback, yields a frame so the UI can paint the
+  // busy state (never a frozen tap), runs the fill, then records ONE undo step
+  // (only when something actually changed) and autosaves.
+  var filling = false;
+  function doFill(x, y) {
+    if (!ready || filling) return;
+    filling = true;
+    var pre = null;
+    try { pre = ctx.getImageData(0, 0, W, H); } catch (e) { pre = null; }
+    wrap.classList.add("busy");
+    setHint("Filling…");
+    // two rAFs guarantee the busy cursor/hint is painted before the sync fill
+    requestAnimationFrame(function () { requestAnimationFrame(function () {
+      var res = floodFill(x, y);
+      wrap.classList.remove("busy");
+      filling = false;
+      if (res && res.filled > 0) {
+        if (pre) {
+          undoStack.push(pre);
+          if (undoStack.length > 15) undoStack.shift();
+          redoStack = [];
+          updateHistoryButtons();
+        }
+        scheduleSave();
+        setHint(res.border
+          ? "Filled! 🪣 (that area was open at the edges — close the gaps to fill just one spot)"
+          : "Filled! 🪣");
+      } else if (res && res.onLine) {
+        setHint("That's an outline — tap inside an area to fill it 🪣");
+      } else {
+        setHint("Tap inside an area to fill it with color 🪣");
+      }
+    }); });
   }
 
   board.addEventListener("pointerdown", function (e) {
@@ -508,8 +623,8 @@
     e.preventDefault();
     try { board.setPointerCapture(e.pointerId); } catch (err) { }
     var p = pos(e);
+    if (tool === "fill") { doFill(p[0], p[1]); return; }   // manages its own undo snapshot
     pushUndo();
-    if (tool === "fill") { floodFill(p[0], p[1]); scheduleSave(); return; }
     if (tool === "stamp" && stampFn) { withChar(ctx, p[0], p[1], size * 4 * dpr, stampFn, false); scheduleSave(); return; }
     drawing = true;
     pts = [p];
@@ -581,6 +696,85 @@
     hideSplash();
   }
   boot();
+
+  // ---------- Phase 4: mobile drawer + left-handed mode ----------
+  var appEl = document.getElementById("app");
+  var railEl = document.getElementById("rail");
+  var drawerToggle = document.getElementById("drawerToggle");
+  var drawerClose = document.getElementById("drawerClose");
+  var drawerScrim = document.getElementById("drawerScrim");
+  var drawerReturnFocus = null;
+
+  function drawerFocusables() {
+    return [].slice.call(railEl.querySelectorAll(
+      'button:not([disabled]),[href],input,[tabindex]:not([tabindex="-1"])'
+    )).filter(function (el) { return el.offsetWidth > 0 || el.offsetHeight > 0; });
+  }
+  function openDrawer() {
+    if (appEl.classList.contains("drawer-open")) return;
+    drawerReturnFocus = document.activeElement;
+    if (drawerScrim) drawerScrim.hidden = false;
+    appEl.classList.add("drawer-open");
+    if (drawerToggle) drawerToggle.setAttribute("aria-expanded", "true");
+    railEl.setAttribute("role", "dialog");
+    railEl.setAttribute("aria-modal", "true");
+    setTimeout(function () { if (drawerClose) drawerClose.focus(); }, 40);
+    document.addEventListener("keydown", drawerKeydown, true);
+  }
+  function closeDrawer() {
+    if (!appEl.classList.contains("drawer-open")) return;
+    appEl.classList.remove("drawer-open");
+    if (drawerToggle) drawerToggle.setAttribute("aria-expanded", "false");
+    railEl.removeAttribute("role");
+    railEl.removeAttribute("aria-modal");
+    document.removeEventListener("keydown", drawerKeydown, true);
+    setTimeout(function () {
+      if (drawerScrim && !appEl.classList.contains("drawer-open")) drawerScrim.hidden = true;
+    }, 300);
+    var back = drawerReturnFocus && drawerReturnFocus.focus ? drawerReturnFocus : drawerToggle;
+    if (back && back.focus) back.focus();
+  }
+  function drawerKeydown(e) {
+    if (e.key === "Escape") { e.preventDefault(); closeDrawer(); return; }
+    if (e.key !== "Tab") return;
+    var f = drawerFocusables();
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1];
+    if (f.indexOf(document.activeElement) === -1) { e.preventDefault(); first.focus(); return; }
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+  if (drawerToggle) drawerToggle.addEventListener("click", function () {
+    if (appEl.classList.contains("drawer-open")) closeDrawer(); else openDrawer();
+  });
+  if (drawerClose) drawerClose.addEventListener("click", closeDrawer);
+  if (drawerScrim) drawerScrim.addEventListener("click", closeDrawer);
+
+  // mini toolbar proxies
+  function bindOpen(id) { var el = document.getElementById(id); if (el) el.addEventListener("click", openDrawer); }
+  bindOpen("miniTool"); bindOpen("miniSize"); bindOpen("miniColor");
+  var miniEraserBtn = document.getElementById("miniEraser");
+  if (miniEraserBtn) miniEraserBtn.addEventListener("click", function () {
+    tool = (tool === "eraser") ? (lastDrawTool || "pencil") : "eraser";
+    markTool();
+    setHint(HINTS[tool] || "");
+  });
+  var miniUndoBtn = document.getElementById("miniUndo");
+  if (miniUndoBtn) miniUndoBtn.addEventListener("click", function () { undoBtn.click(); });
+
+  // left-handed preference, persisted locally
+  var LH_KEY = "mochi-left-handed";
+  var leftHandBtn = document.getElementById("leftHandBtn");
+  function applyLeftHanded(on) {
+    appEl.classList.toggle("left-handed", !!on);
+    if (leftHandBtn) leftHandBtn.setAttribute("aria-checked", on ? "true" : "false");
+  }
+  try { applyLeftHanded(localStorage.getItem(LH_KEY) === "1"); } catch (e) { }
+  if (leftHandBtn) leftHandBtn.addEventListener("click", function () {
+    var on = !appEl.classList.contains("left-handed");
+    applyLeftHanded(on);
+    try { localStorage.setItem(LH_KEY, on ? "1" : "0"); } catch (e) { }
+  });
 
   // ---------- optional Supabase gallery ----------
   var CFG = window.KAWAII_CONFIG || {};
