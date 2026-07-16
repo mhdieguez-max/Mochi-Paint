@@ -78,7 +78,7 @@ body::after{width:380px;height:380px;background:#D7E5FB;bottom:-130px;right:-130
 /* ---------- Phase 2: inline-SVG tool icons + control states ---------- */
 .ic{width:26px;height:26px;display:block;pointer-events:none}
 .ic-sm{width:20px;height:20px;display:block}
-.rail .tbtn em{display:none}                 /* legacy emoji fallback off */
+.rail .tbtn em{display:block;font-style:normal}   /* emoji tool icons (kept from Codex) */
 .rail .tbtn{position:relative}
 .rail .tbtn:hover{background:#FBEFF5}
 .rail .tbtn:active{transform:scale(.94)}
@@ -316,3 +316,7 @@ dialog input:focus{outline:none;border-color:#F4A7C3}
 /* Phase 6: clear-confirmation armed state */
 .ibtn.armed{background:#FFE1EA;box-shadow:inset 0 0 0 2px #EF7DA5}
 .ibtn.armed:hover{background:#FFE1EA}
+
+/* emoji icons kept from Codex: size them in the mini toolbar + more-colors */
+.mini-btn em{font-style:normal;font-size:22px;line-height:1}
+.more-colors{font-size:20px}
