@@ -1,0 +1,272 @@
+/* ✨ Mochi Paint Hero & Character Animations */
+
+/* Entrance animation for hero section */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Gentle floating bounce for characters */
+@keyframes floatBounce {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-8px) scale(1.02);
+  }
+}
+
+/* Scale pulse for cute breathing effect */
+@keyframes breathe {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* Subtle wiggle for personality */
+@keyframes wiggle {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-1deg);
+  }
+  75% {
+    transform: rotate(1deg);
+  }
+}
+
+/* Hero card entrance with fade-in */
+.hero-card {
+  animation: fadeInUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Heading entrance */
+h1 {
+  animation: fadeInUp 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s forwards;
+  opacity: 0;
+}
+
+/* Subtitle entrance */
+.sub {
+  animation: fadeInUp 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.25s forwards;
+  opacity: 0;
+}
+
+/* CTA button entrance with hover animation */
+.cta {
+  animation: fadeInUp 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.35s forwards;
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.cta:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 14px 32px rgba(177, 77, 116, 0.45);
+}
+
+/* Character card container animations */
+.card {
+  animation: fadeInUp 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+
+/* Stagger animation for each card based on position */
+.grid > .card:nth-child(1) {
+  animation-delay: 0.45s;
+}
+
+.grid > .card:nth-child(2) {
+  animation-delay: 0.52s;
+}
+
+.grid > .card:nth-child(3) {
+  animation-delay: 0.59s;
+}
+
+.grid > .card:nth-child(4) {
+  animation-delay: 0.66s;
+}
+
+.grid > .card:nth-child(5) {
+  animation-delay: 0.73s;
+}
+
+.grid > .card:nth-child(6) {
+  animation-delay: 0.80s;
+}
+
+.grid > .card:nth-child(n+7) {
+  animation-delay: calc(0.45s + (var(--card-index, 7) - 6) * 0.07s);
+}
+
+/* Cute floating animation for character canvas */
+.art {
+  animation: floatBounce 3s ease-in-out infinite !important;
+  transform-origin: center;
+}
+
+/* Stagger the float timing for each card */
+.grid > .card:nth-child(1) .art {
+  animation-delay: 0s;
+}
+
+.grid > .card:nth-child(2) .art {
+  animation-delay: 0.15s;
+}
+
+.grid > .card:nth-child(3) .art {
+  animation-delay: 0.30s;
+}
+
+.grid > .card:nth-child(4) .art {
+  animation-delay: 0.45s;
+}
+
+.grid > .card:nth-child(5) .art {
+  animation-delay: 0.60s;
+}
+
+.grid > .card:nth-child(6) .art {
+  animation-delay: 0.75s;
+}
+
+.grid > .card:nth-child(n+7) .art {
+  animation-delay: calc(0s + (var(--card-index, 7) - 6) * 0.15s);
+}
+
+/* Subtle wiggle on hover for extra cute factor */
+.card:hover .art {
+  animation: wiggle 0.3s ease-in-out !important;
+}
+
+.card:hover .pill {
+  transform: scale(1.08);
+}
+
+/* Text element animations inside cards */
+.name {
+  font-weight: 800;
+  transition: color 0.3s ease;
+}
+
+.card:hover .name {
+  color: #EF7DA5;
+}
+
+/* Background enhancement - subtle gradient animation */
+body {
+  background: linear-gradient(
+    -45deg,
+    #FDEFF6 0%,
+    #F0EAFB 46%,
+    #E4F0FD 100%
+  );
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Animated background blurs */
+body:before,
+body:after {
+  animation: floatBackground 8s ease-in-out infinite;
+}
+
+body:before {
+  animation-delay: 0s;
+}
+
+body:after {
+  animation-delay: 4s;
+}
+
+@keyframes floatBackground {
+  0%, 100% {
+    opacity: 0.55;
+    transform: translate(0, 0);
+  }
+  50% {
+    opacity: 0.65;
+    transform: translate(15px, 15px);
+  }
+}
+
+/* Section entrance animation */
+.section {
+  animation: fadeInUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.8s forwards;
+  opacity: 0;
+}
+
+.section:nth-child(1) {
+  animation-delay: 0.8s;
+}
+
+.section:nth-child(2) {
+  animation-delay: 1.0s;
+}
+
+.section:nth-child(3) {
+  animation-delay: 1.2s;
+}
+
+.section:nth-child(n+4) {
+  animation-delay: calc(0.8s + var(--section-index, 4) * 0.2s);
+}
+
+/* Cute scaling on scroll into view (gentle) */
+@media (prefers-reduced-motion: no-preference) {
+  .card {
+    will-change: transform, opacity;
+  }
+
+  .art {
+    will-change: transform;
+  }
+}
+
+/* Mobile-friendly animations */
+@media (max-width: 760px) {
+  @keyframes floatBounce {
+    0%, 100% {
+      transform: translateY(0px) scale(1);
+    }
+    50% {
+      transform: translateY(-4px) scale(1.01);
+    }
+  }
+
+  .cta:hover {
+    transform: translateY(-1px) scale(1.03);
+  }
+}
+
+/* Respect prefers-reduced-motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
