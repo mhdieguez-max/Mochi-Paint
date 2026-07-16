@@ -63,6 +63,16 @@
     { slug: "momo", name: "Momo", species: "monkey", src: "coloring-pages/forest/momo-monkey.png", thumb: "coloring-pages/forest/previews/momo-monkey-color.png" },
     { slug: "leo", name: "Leo", species: "lion", src: "coloring-pages/forest/leo-lion.png", thumb: "coloring-pages/forest/previews/leo-lion-color.png" }
   ];
+  // Meadow Pals moved to the same finished line-art format (July 2026).
+  // Their procedural draw functions still exist in pals.js for sticker
+  // stamping — only the coloring PAGES are image-based now.
+  var MEADOW_PALS = [
+    { slug: "usagi", name: "Usagi", species: "bunny", src: "coloring-pages/meadow/usagi-bunny.png", thumb: "coloring-pages/meadow/previews/usagi-bunny-color.png" },
+    { slug: "fuwa", name: "Fuwa", species: "sheep", src: "coloring-pages/meadow/fuwa-sheep.png", thumb: "coloring-pages/meadow/previews/fuwa-sheep-color.png" },
+    { slug: "kero", name: "Kero", species: "frog", src: "coloring-pages/meadow/kero-frog.png", thumb: "coloring-pages/meadow/previews/kero-frog-color.png" },
+    { slug: "hachi", name: "Hachi", species: "bee", src: "coloring-pages/meadow/hachi-bee.png", thumb: "coloring-pages/meadow/previews/hachi-bee-color.png" }
+  ];
+  var IMAGE_PALS = MEADOW_PALS.concat(FOREST_PALS);
   var undoStack = [], redoStack = [], drawing = false, pts = [], snap = null;
 
   var hint = document.getElementById("hint");
@@ -262,7 +272,7 @@
   // previews and these coloring pages are always the exact same drawings.
   var TAU = 7;
   var Pals = window.MochiPals;
-  var STAMPS = Pals.PALS.map(function (p) { return [p.name, p.species, p.draw]; });
+  var STAMPS = Pals.PALS.map(function (p) { return [p.name, p.species, p.draw, p.group]; });
 
   function withChar(c, x, y, s, fn, asLines) {
     Pals.render(c, x, y, s, fn, asLines);
@@ -380,10 +390,14 @@
   grid.appendChild(blankBtn);
   stampBtns.push(blankBtn);
 
+  // Meadow pals now open image-based coloring pages, so their procedural
+  // buttons only show in sticker-stamp mode (image buttons cover page mode).
+  var meadowStampBtns = [];
   STAMPS.forEach(function (st) {
     var b = document.createElement("button");
     b.className = "stamp";
     b.title = st[0] + " the " + st[1];
+    if (st[3] === "meadow") { b.hidden = true; meadowStampBtns.push(b); }
     var pc = document.createElement("canvas");
     var pd = Math.min(window.devicePixelRatio || 1, 2);
     pc.width = Math.round(72 * pd); pc.height = Math.round(72 * pd);
@@ -415,7 +429,7 @@
   // line art, not stampable vector pals), so they hide in sticker-stamp mode.
   var forestBtns = [];
   var forestBtnBySlug = {};
-  FOREST_PALS.forEach(function (pal) {
+  IMAGE_PALS.forEach(function (pal) {
     var b = document.createElement("button");
     b.className = "stamp";
     b.title = pal.name + " the " + pal.species;
@@ -449,6 +463,7 @@
     modePage.classList.add("on"); modeStamp.classList.remove("on");
     blankBtn.hidden = false;
     forestBtns.forEach(function (b) { b.hidden = false; });
+    meadowStampBtns.forEach(function (b) { b.hidden = true; });
     setHint("Tap a pal to open them as a coloring page!");
   });
   modeStamp.addEventListener("click", function () {
@@ -456,6 +471,7 @@
     modeStamp.classList.add("on"); modePage.classList.remove("on");
     blankBtn.hidden = true;
     forestBtns.forEach(function (b) { b.hidden = true; });
+    meadowStampBtns.forEach(function (b) { b.hidden = false; });
     setHint("Tap a pal, then tap the canvas to stamp them anywhere!");
   });
 
@@ -761,9 +777,12 @@
     STAMPS.forEach(function (st, i) {
       if (st[0].toLowerCase() === palParam) startIdx = i;
     });
-    FOREST_PALS.forEach(function (p) {
+    IMAGE_PALS.forEach(function (p) {
       if (p.slug === palParam) startForest = p;
     });
+    // No deep link: open the image-based Usagi page (the procedural
+    // meadow buttons are hidden in page mode, so don't default to one).
+    if (!palParam) startForest = MEADOW_PALS[0];
   } catch (err) {}
   function boot() {
     if (!ready) { requestAnimationFrame(boot); return; }

@@ -122,12 +122,23 @@
         <div class="grid"></div>
       `;
       const grid = section.querySelector(".grid");
+      // Meadow Pals use finished watercolor previews (matching their new
+      // image-based coloring pages); other groups render procedural art.
+      const MEADOW_ART = {
+        usagi: "/coloring-pages/meadow/previews/usagi-bunny-color.png",
+        fuwa: "/coloring-pages/meadow/previews/fuwa-sheep-color.png",
+        kero: "/coloring-pages/meadow/previews/kero-frog-color.png",
+        hachi: "/coloring-pages/meadow/previews/hachi-bee-color.png"
+      };
       P.PALS.filter((pal) => pal.group === group.slug).forEach((pal) => {
         const card = document.createElement("a");
         card.className = "card";
         card.href = "/?pal=" + encodeURIComponent(pal.slug);
+        const art = MEADOW_ART[pal.slug]
+          ? `<img class="art forest-art" src="${MEADOW_ART[pal.slug]}" alt="${pal.name} the ${pal.species} coloring page" loading="lazy">`
+          : `<canvas class="art" data-pal="${pal.slug}" aria-hidden="true"></canvas>`;
         card.innerHTML = `
-          <canvas class="art" data-pal="${pal.slug}" aria-hidden="true"></canvas>
+          ${art}
           <div class="name">${pal.name}</div>
           <div class="species">the ${pal.species}</div>
           <div class="pill">Color me →</div>
