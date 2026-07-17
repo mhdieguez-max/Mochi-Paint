@@ -122,20 +122,28 @@
         <div class="grid"></div>
       `;
       const grid = section.querySelector(".grid");
-      // Meadow Pals use finished watercolor previews (matching their new
-      // image-based coloring pages); other groups render procedural art.
-      const MEADOW_ART = {
+      // Groups with image-based coloring pages use their finished preview
+      // art (swap the PNGs to upgrade); other groups render procedural art.
+      const IMAGE_ART = {
         usagi: "/coloring-pages/meadow/previews/usagi-bunny-color.png",
         fuwa: "/coloring-pages/meadow/previews/fuwa-sheep-color.png",
         kero: "/coloring-pages/meadow/previews/kero-frog-color.png",
-        hachi: "/coloring-pages/meadow/previews/hachi-bee-color.png"
+        hachi: "/coloring-pages/meadow/previews/hachi-bee-color.png",
+        miruku: "/coloring-pages/barnyard/previews/miruku-cow-color.png",
+        kobo: "/coloring-pages/barnyard/previews/kobo-puppy-color.png",
+        piyo: "/coloring-pages/barnyard/previews/piyo-chick-color.png",
+        kamo: "/coloring-pages/barnyard/previews/kamo-duck-color.png",
+        yuki: "/coloring-pages/snow/previews/yuki-pom-pup-color.png",
+        kori: "/coloring-pages/snow/previews/kori-polar-bear-color.png",
+        panpan: "/coloring-pages/snow/previews/panpan-panda-color.png",
+        pen: "/coloring-pages/snow/previews/pen-penguin-color.png"
       };
       P.PALS.filter((pal) => pal.group === group.slug).forEach((pal) => {
         const card = document.createElement("a");
         card.className = "card";
         card.href = "/?pal=" + encodeURIComponent(pal.slug);
-        const art = MEADOW_ART[pal.slug]
-          ? `<img class="art forest-art" src="${MEADOW_ART[pal.slug]}" alt="${pal.name} the ${pal.species} coloring page" loading="lazy">`
+        const art = IMAGE_ART[pal.slug]
+          ? `<img class="art forest-art" src="${IMAGE_ART[pal.slug]}" alt="${pal.name} the ${pal.species} coloring page" loading="lazy">`
           : `<canvas class="art" data-pal="${pal.slug}" aria-hidden="true"></canvas>`;
         card.innerHTML = `
           ${art}
