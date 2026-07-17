@@ -55,7 +55,7 @@ a.ibtn{text-decoration:none}
 .nav-ic{width:20px;height:20px;display:block;pointer-events:none}
 
 .stage{flex:1;display:flex;min-height:0;
-  padding-top:10px;padding-bottom:8px;padding-left:12px;
+  padding-top:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom));padding-left:12px;
   padding-right:calc(12px + env(safe-area-inset-right))}
 .canvas-wrap{position:relative;flex:1;min-width:0;border-radius:22px;overflow:hidden;border:3px solid #FBD9E8;background:#fff;box-shadow:0 10px 30px rgba(180,140,180,.18)}
 
@@ -121,7 +121,7 @@ a.ibtn{text-decoration:none}
 
 /* visible keyboard focus across every control */
 .tbtn:focus-visible,.ibtn:focus-visible,.cc-btn:focus-visible,
-.chip:focus-visible,.stamp:focus-visible,.qsw:focus-visible,
+.qsw:focus-visible,
 .lh-toggle:focus-visible,
 #size:focus-visible{outline:3px solid #4AA3E8;outline-offset:2px}
 @media(prefers-reduced-motion:reduce){.rail .tbtn,.rail .ibtn,.cc-btn{transition:none}}
@@ -134,14 +134,6 @@ a.ibtn{text-decoration:none}
   padding:6px 14px;border-radius:999px;box-shadow:0 2px 10px rgba(120,100,140,.15);
   pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-.dock{background:rgba(255,255,255,.82);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  border-radius:22px 22px 0 0;box-shadow:0 -8px 24px rgba(150,120,160,.14);
-  padding:8px 12px calc(10px + env(safe-area-inset-bottom))}
-
-.hstrip{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none;align-items:center}
-.hstrip::-webkit-scrollbar{display:none}
-.hstrip>*{flex:0 0 auto}
-
 .tbtn{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:58px;padding:8px 6px;border-radius:16px;border:2px solid transparent;background:#F7F4FB;cursor:pointer;font-family:inherit;color:#6B5350}
 .tbtn em{font-style:normal;font-size:22px;line-height:1}
 .tbtn span{font-size:11px;font-weight:700}
@@ -150,17 +142,6 @@ a.ibtn{text-decoration:none}
 
 #preview{width:34px;height:34px;border-radius:50%;border:2px solid #F0E6F2;display:flex;align-items:center;justify-content:center;background:#fff}
 #previewDot{border-radius:50%;background:#F06292}
-
-.mode-row{display:flex;gap:8px;margin:0 0 8px}
-.chip{padding:7px 14px;border-radius:999px;border:2px solid transparent;background:#F7F4FB;font-family:'Baloo 2',cursive;font-size:13px;color:#6B5350;cursor:pointer}
-.chip.on{background:#FDEBF2;border-color:#F4A7C3;color:#B14D74}
-
-.stamp{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 6px 4px;border-radius:16px;border:2px solid transparent;background:#F7F4FB;cursor:pointer}
-.stamp.on{background:#FDEBF2;border-color:#F4A7C3}
-.stamp b{font-size:11px;font-weight:700;color:#6B5350;font-family:'Baloo 2',cursive}
-.stamp canvas,.stamp div{display:block}
-@keyframes wiggle{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
-.stamp:hover canvas{animation:wiggle .5s ease-in-out infinite}
 
 #toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#6B5350;color:#fff;font-size:13px;font-weight:700;padding:10px 18px;border-radius:999px;box-shadow:0 6px 20px rgba(90,74,66,.35);z-index:50;max-width:90vw;text-align:center}
 
@@ -178,7 +159,6 @@ a.ibtn{text-decoration:none}
   .logo{font-size:24px}
   .ibtn{width:42px;height:42px;font-size:20px}
   .nav-ic{width:23px;height:23px}
-  .dock{border-radius:22px;margin:0 12px 12px}
   /* full toolbar beside the canvas on tablet + desktop */
   .rail{width:112px;margin-left:12px;padding:9px 8px;gap:6px}
   .rail .tbtn{min-height:44px;padding:3px 5px;gap:0}
@@ -225,7 +205,6 @@ a.ibtn{text-decoration:none}
   .rail-size #preview{width:30px;height:30px}
   .rail-history{padding-top:6px}
   .rail .ibtn{height:44px}
-  .dock{padding-top:6px}
 }
 
 /* Phase 5: paint-bucket processing feedback */
