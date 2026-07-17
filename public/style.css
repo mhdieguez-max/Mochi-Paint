@@ -49,6 +49,10 @@ body::after{width:380px;height:380px;background:#D7E5FB;bottom:-130px;right:-130
   transition:transform .12s,background .15s}
 .ibtn:hover{background:#fff}
 .ibtn:active{transform:scale(.88);background:#fff}
+a.ibtn{text-decoration:none}
+/* line-drawn nav icons (home / print / save) share the kawaii brown ink */
+.appbar .ibtn{color:#6B5350}
+.nav-ic{width:20px;height:20px;display:block;pointer-events:none}
 
 .stage{flex:1;display:flex;min-height:0;
   padding-top:10px;padding-bottom:8px;padding-left:12px;
@@ -114,18 +118,15 @@ body::after{width:380px;height:380px;background:#D7E5FB;bottom:-130px;right:-130
 .qsw[aria-pressed="true"]::after{content:"";position:absolute;top:-4px;right:-4px;width:17px;height:17px;border-radius:50%;
   background:#5A4A42 url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path d='M2.6 6.3l2.1 2.1 4.6-4.8' fill='none' stroke='white' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/></svg>") center/11px no-repeat;
   box-shadow:0 0 0 2px #fff}
-.more-colors{width:44px;height:44px;border-radius:14px;border:2px dashed #E1D0EC;background:#fff;
-  display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;transition:transform .12s,border-color .15s}
-.more-colors:hover{border-color:#F4A7C3}
-.more-colors:active{transform:scale(.92)}
 
 /* visible keyboard focus across every control */
-.tbtn:focus-visible,.ibtn:focus-visible,.cc-btn:focus-visible,.tab:focus-visible,
-.chip:focus-visible,.swatch:focus-visible,.shade:focus-visible,.stamp:focus-visible,
-.qsw:focus-visible,.more-colors:focus-visible,
+.tbtn:focus-visible,.ibtn:focus-visible,.cc-btn:focus-visible,
+.chip:focus-visible,.stamp:focus-visible,.qsw:focus-visible,
+.lh-toggle:focus-visible,
 #size:focus-visible{outline:3px solid #4AA3E8;outline-offset:2px}
 @media(prefers-reduced-motion:reduce){.rail .tbtn,.rail .ibtn,.cc-btn{transition:none}}
-#board{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
+/* pinch-zoom stays with the browser; single-finger input goes to drawing */
+#board{display:block;width:100%;height:100%;touch-action:pinch-zoom;cursor:crosshair}
 #lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 #cursorRing{position:absolute;border:1.5px solid rgba(90,74,66,.55);border-radius:50%;pointer-events:none;display:none;transform:translate(-50%,-50%)}
 .hint{position:absolute;top:10px;left:50%;transform:translateX(-50%);margin:0;max-width:92%;
@@ -136,11 +137,6 @@ body::after{width:380px;height:380px;background:#D7E5FB;bottom:-130px;right:-130
 .dock{background:rgba(255,255,255,.82);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
   border-radius:22px 22px 0 0;box-shadow:0 -8px 24px rgba(150,120,160,.14);
   padding:8px 12px calc(10px + env(safe-area-inset-bottom))}
-.tabs{display:flex;gap:6px;margin-bottom:8px}
-.tab{flex:1;padding:9px 4px;border:none;border-radius:14px;background:transparent;font-family:'Baloo 2',cursive;font-size:14px;color:#8A7A74;cursor:pointer}
-.tab.on{background:#FDEBF2;color:#B14D74}
-.panel{display:none}
-.panel.on{display:block;min-height:118px}
 
 .hstrip{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none;align-items:center}
 .hstrip::-webkit-scrollbar{display:none}
@@ -152,16 +148,8 @@ body::after{width:380px;height:380px;background:#D7E5FB;bottom:-130px;right:-130
 .tbtn:active{transform:scale(.95)}
 .tbtn.on{background:#FDEBF2;border-color:#F4A7C3;color:#B14D74}
 
-.size-row{display:flex;align-items:center;gap:10px;padding:6px 4px 0;font-size:13px;font-weight:700;color:#8A7A74}
-.size-row input{flex:1;accent-color:#F48FB1;min-width:0}
 #preview{width:34px;height:34px;border-radius:50%;border:2px solid #F0E6F2;display:flex;align-items:center;justify-content:center;background:#fff}
 #previewDot{border-radius:50%;background:#F06292}
-
-.swatch{width:38px;height:38px;border-radius:50%;border:3px solid transparent;cursor:pointer;padding:0;box-shadow:0 0 0 1px rgba(90,74,66,.12)}
-.swatch.on{border-color:#5A4A42}
-.swatch.dice{background:#fff;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center}
-.shade{width:46px;height:34px;border-radius:10px;border:3px solid transparent;cursor:pointer;padding:0;box-shadow:0 0 0 1px rgba(90,74,66,.12)}
-.shade.on{border-color:#5A4A42}
 
 .mode-row{display:flex;gap:8px;margin:0 0 8px}
 .chip{padding:7px 14px;border-radius:999px;border:2px solid transparent;background:#F7F4FB;font-family:'Baloo 2',cursive;font-size:13px;color:#6B5350;cursor:pointer}
@@ -173,22 +161,6 @@ body::after{width:380px;height:380px;background:#D7E5FB;bottom:-130px;right:-130
 .stamp canvas,.stamp div{display:block}
 @keyframes wiggle{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
 .stamp:hover canvas{animation:wiggle .5s ease-in-out infinite}
-
-dialog{border:none;border-radius:20px;padding:22px;box-shadow:0 10px 40px rgba(90,74,66,.25);font-family:inherit;color:#5A4A42;width:min(92vw,560px)}
-dialog::backdrop{background:rgba(90,74,66,.35)}
-dialog h2{font-family:'Baloo 2',cursive;margin:0 0 8px;font-size:20px;color:#6B5350}
-dialog label{display:block;font-size:13px;font-weight:700;margin:10px 0 4px}
-dialog input{width:100%;padding:9px 12px;border-radius:12px;border:2px solid #F0E6F2;font-family:inherit;font-size:14px}
-dialog input:focus{outline:none;border-color:#F4A7C3}
-.btn{padding:9px 18px;border-radius:14px;border:none;background:#F48FB1;color:#fff;font-weight:700;font-family:inherit;font-size:14px;cursor:pointer}
-.btn:hover{background:#EF7DA5}
-.btn.ghost{background:#F7F4FB;color:#6B5350}
-.dialog-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
-
-.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;max-height:55vh;overflow-y:auto}
-.gallery-grid figure{margin:0}
-.gallery-grid img{width:100%;border-radius:14px;border:2px solid #F0E6F2;display:block;background:#fff}
-.gallery-grid figcaption{font-size:12px;color:#8A7A74;padding:4px 2px}
 
 #toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#6B5350;color:#fff;font-size:13px;font-weight:700;padding:10px 18px;border-radius:999px;box-shadow:0 6px 20px rgba(90,74,66,.35);z-index:50;max-width:90vw;text-align:center}
 
@@ -205,6 +177,7 @@ dialog input:focus{outline:none;border-color:#F4A7C3}
   #app{max-width:940px}
   .logo{font-size:24px}
   .ibtn{width:42px;height:42px;font-size:20px}
+  .nav-ic{width:23px;height:23px}
   .dock{border-radius:22px;margin:0 12px 12px}
   /* full toolbar beside the canvas on tablet + desktop */
   .rail{width:112px;margin-left:12px;padding:9px 8px;gap:6px}
@@ -218,8 +191,7 @@ dialog input:focus{outline:none;border-color:#F4A7C3}
   .rail .ibtn{width:100%;height:44px}
 }
 
-/* ---------- Phase 4: mobile drawer + left-handed mode ---------- */
-.mini-rail,.drawer-scrim,.drawer-head{display:none}
+/* ---------- left-handed mode ---------- */
 .rail-setting{display:flex;justify-content:center;padding-top:8px;border-top:1px solid rgba(150,120,160,.16)}
 .lh-toggle{display:flex;flex-direction:column;align-items:center;gap:1px;min-height:44px;padding:5px 8px;
   border:2px solid #EADFF0;border-radius:12px;background:#fff;cursor:pointer;font-family:inherit;
@@ -229,65 +201,13 @@ dialog input:focus{outline:none;border-color:#F4A7C3}
 /* left-handed: mirror the stage so the toolbar sits on the left */
 #app.left-handed .stage{flex-direction:row-reverse}
 #app.left-handed .rail{margin-left:0;margin-right:12px}
-.mini-btn:focus-visible,.mini-swatch:focus-visible,.mfav:focus-visible,
-.drawer-close:focus-visible,.lh-toggle:focus-visible{outline:3px solid #4AA3E8;outline-offset:2px}
 
+/* small phones: keep the single rail visible beside the canvas, just tighter */
 @media (max-width:640px) and (orientation:portrait){
-  /* compact, always-visible mini toolbar */
-  .mini-rail{display:flex;flex-direction:column;align-items:center;gap:8px;flex:0 0 auto;width:60px;margin-left:8px;
-    padding:8px 6px;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-    border-radius:20px;box-shadow:0 6px 18px rgba(150,120,160,.16);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
-  .mini-rail::-webkit-scrollbar{display:none}
-  .mini-btn{width:44px;height:44px;border-radius:13px;border:none;background:rgba(255,255,255,.72);flex:0 0 auto;
-    box-shadow:0 2px 6px rgba(190,140,180,.18);display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
-  .mini-btn .ic{width:24px;height:24px}
-  .mini-btn:active{transform:scale(.92)}
-  .mini-btn[aria-pressed="true"]{background:#FDEBF2;box-shadow:inset 0 0 0 2px #E58AAE}
-  .mini-btn:disabled{opacity:.4}
-  .mini-ham{display:flex;flex-direction:column;gap:3px}
-  .mini-ham i{width:18px;height:2.5px;border-radius:2px;background:#8A7A74}
-  .mini-swatch{width:44px;height:44px;border-radius:13px;border:2px solid #EADFF0;background:#fff;flex:0 0 auto;
-    display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
-  .mini-swatch .cc-dot{width:26px;height:26px;border-radius:50%;box-shadow:inset 0 0 0 1.5px rgba(90,74,66,.3)}
-  .mini-favs{display:flex;flex-direction:column;gap:6px}
-  .mfav{width:44px;height:44px;border-radius:50%;background:var(--c);border:3px solid transparent;padding:0;cursor:pointer;
-    box-shadow:0 0 0 1px rgba(90,74,66,.16);flex:0 0 auto}
-  .mfav[aria-pressed="true"]{border-color:#5A4A42}
-
-  /* the full rail becomes an off-canvas drawer that opens right -> left */
-  .rail{position:fixed;top:0;bottom:0;right:0;left:auto;z-index:40;width:min(80vw,300px);margin:0;gap:12px;
-    border-radius:22px 0 0 22px;
-    padding:calc(10px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) 14px;
-    transform:translateX(106%);visibility:hidden;transition:transform .28s ease,visibility .28s;
-    box-shadow:-12px 0 36px rgba(120,90,130,.3);overflow-y:auto;overscroll-behavior:contain}
-  #app.drawer-open .rail{transform:translateX(0);visibility:visible}
-  .drawer-scrim{display:block;position:fixed;inset:0;z-index:39;background:rgba(90,74,66,.36);
-    opacity:0;pointer-events:none;transition:opacity .28s}
-  #app.drawer-open .drawer-scrim{opacity:1;pointer-events:auto}
-  .drawer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
-  .drawer-title{font-family:'Baloo 2',cursive;font-weight:700;color:#B0567F;font-size:17px}
-  .drawer-close{width:44px;height:44px;border-radius:12px;border:none;background:#F7F4FB;color:#8A7A74;font-size:18px;cursor:pointer}
-  /* roomy drawer layout: rows/grids instead of a narrow column */
-  .rail-tools{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:8px}
-  .rail .tbtn{width:auto;flex:0 0 76px;min-height:62px;padding:7px 4px}
-  .rail .tbtn span{display:block;font-size:11px}
-  .rail .ic{width:28px;height:28px}
-  .rail-color{justify-content:flex-start}
-  .rail-colors{justify-content:flex-start;gap:8px}
-  .rail-size{flex-direction:row;align-items:center;gap:10px}
-  .rail-size input{flex:1;min-width:0}
-  .rail-history{flex-direction:row;justify-content:center;gap:10px;margin-top:6px}
-  .rail .ibtn{width:auto;flex:0 0 62px}
-  .rail-setting{justify-content:flex-start}
-  .lh-toggle{flex-direction:row;gap:6px;font-size:12px;min-height:44px}
-  .lh-toggle .lh-ico{font-size:16px}
-
-  /* left-handed on mobile: mini-rail on the left, drawer slides from the left */
-  #app.left-handed .mini-rail{margin-left:0;margin-right:8px}
-  #app.left-handed .rail{right:auto;left:0;border-radius:0 22px 22px 0;transform:translateX(-106%);
-    box-shadow:12px 0 36px rgba(120,90,130,.3);
-    padding:calc(10px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left))}
-  #app.left-handed.drawer-open .rail{transform:translateX(0)}
+  .stage{padding-left:8px;padding-right:calc(8px + env(safe-area-inset-right))}
+  .rail{margin-left:8px}
+  #app.left-handed .rail{margin-left:0;margin-right:8px}
+  .qsw{width:42px;height:42px}
 }
 
 /* mobile landscape: trim chrome + use the compact icon rail to maximize canvas;
@@ -306,8 +226,6 @@ dialog input:focus{outline:none;border-color:#F4A7C3}
   .rail-history{padding-top:6px}
   .rail .ibtn{height:44px}
   .dock{padding-top:6px}
-  .dock .tabs{margin-bottom:5px}
-  .dock .panel.on{min-height:0}
 }
 
 /* Phase 5: paint-bucket processing feedback */
@@ -316,7 +234,3 @@ dialog input:focus{outline:none;border-color:#F4A7C3}
 /* Phase 6: clear-confirmation armed state */
 .ibtn.armed{background:#FFE1EA;box-shadow:inset 0 0 0 2px #EF7DA5}
 .ibtn.armed:hover{background:#FFE1EA}
-
-/* emoji icons kept from Codex: size them in the mini toolbar + more-colors */
-.mini-btn em{font-style:normal;font-size:22px;line-height:1}
-.more-colors{font-size:20px}
