@@ -94,100 +94,19 @@
     toast._t = setTimeout(function () { t.hidden = true; }, 2200);
   }
 
-  // ---------- colors & shades ----------
-  var BASES = ["#F06292", "#FF8A80", "#FFB74D", "#FFE082", "#AED581", "#4DD0B1", "#64B5F6", "#9575CD", "#F48FB1", "#A1887F", "#546E7A", "#37323E"];
-  var BASE_NAMES = ["Sakura", "Coral", "Peach", "Lemon", "Matcha", "Mint", "Sky", "Lavender", "Blossom", "Cocoa", "Slate", "Ink"];
-
+  // ---------- colors: the rail palette is the single color control ----------
   function hexRgb(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; }
-  function rgbHex(r, g, b) {
-    function p(v) { v = Math.max(0, Math.min(255, Math.round(v))); return v.toString(16).padStart(2, "0"); }
-    return "#" + p(r) + p(g) + p(b);
-  }
-  function mixWhite(h, t) { var c = hexRgb(h); return rgbHex(c[0] + (255 - c[0]) * t, c[1] + (255 - c[1]) * t, c[2] + (255 - c[2]) * t); }
-  function darken(h, t) { var c = hexRgb(h); return rgbHex(c[0] * (1 - t), c[1] * (1 - t), c[2] * (1 - t)); }
-  function makeShades(h) { return [mixWhite(h, .72), mixWhite(h, .48), mixWhite(h, .24), h, darken(h, .18), darken(h, .36), darken(h, .54)]; }
-
-  function hslHex(h, s, l) {
-    s /= 100; l /= 100;
-    var k = function (n) { return (n + h / 30) % 12; };
-    var a = s * Math.min(l, 1 - l);
-    var f = function (n) { return l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1))); };
-    return rgbHex(255 * f(0), 255 * f(8), 255 * f(4));
-  }
-  function surprisePalette() {
-    var start = Math.floor(Math.random() * 360), out = [];
-    for (var i = 0; i < 12; i++) {
-      out.push(hslHex((start + i * 30 + Math.random() * 14) % 360, 58 + Math.random() * 26, 62 + Math.random() * 15));
-    }
-    return out;
-  }
-
-  var pal = document.getElementById("palette");
-  function renderPalette(colors, names) {
-    pal.innerHTML = "";
-    colors.forEach(function (h, i) {
-      var b = document.createElement("button");
-      b.className = "swatch";
-      var nm = (names && names[i]) || "Color " + (i + 1);
-      b.title = nm;
-      b.setAttribute("aria-label", nm);
-      b.style.background = h;
-      b.addEventListener("click", function () {
-        color = h;
-        renderShades();
-        pal.querySelectorAll(".swatch").forEach(function (s) { s.classList.remove("on"); });
-        b.classList.add("on");
-        highlightColor(null);
-      });
-      pal.appendChild(b);
-    });
-    var dice = document.createElement("button");
-    dice.className = "swatch dice";
-    dice.title = "Surprise me — random pastel palette";
-    dice.setAttribute("aria-label", "Surprise palette");
-    dice.textContent = "🎲";
-    dice.addEventListener("click", function () {
-      renderPalette(surprisePalette(), null);
-      toast("Surprise palette! 🎲 (tap again for another)");
-    });
-    pal.appendChild(dice);
-    color = colors[0];
-    pal.firstChild.classList.add("on");
-    renderShades();
-  }
-
-  var shadesEl = document.getElementById("shades");
-  function renderShades() {
-    shadesEl.innerHTML = "";
-    makeShades(color).forEach(function (h, i) {
-      var b = document.createElement("button");
-      b.className = "shade";
-      b.setAttribute("aria-label", "Shade " + (i + 1));
-      b.style.background = h;
-      b.addEventListener("click", function () {
-        shade = h;
-        shadesEl.querySelectorAll(".shade").forEach(function (s) { s.classList.remove("on"); });
-        b.classList.add("on");
-        highlightColor(null);
-        updatePreview();
-      });
-      shadesEl.appendChild(b);
-      if (i === 3) { shade = h; b.classList.add("on"); }
-    });
-    updatePreview();
-  }
 
   var sizeIn = document.getElementById("size"), previewDot = document.getElementById("previewDot");
   var ccDot = document.getElementById("ccDot"), ccBtn = document.getElementById("currentColor");
+  var quickWrap = document.getElementById("quickColors");
+  var quickBtns = quickWrap ? [].slice.call(quickWrap.querySelectorAll(".qsw")) : [];
   function syncCurrentColor() {
     if (ccDot) ccDot.style.background = shade;
-    var mc = document.getElementById("miniCcDot");
-    if (mc) mc.style.background = shade;
   }
-  // tapping the current-colour swatch jumps to the Colors panel
+  // tapping the current-colour swatch scrolls the palette into view
   if (ccBtn) ccBtn.addEventListener("click", function () {
-    var t = document.querySelector('.tab[data-panel="panelColors"]');
-    if (t) t.click();
+    if (quickWrap && quickWrap.scrollIntoView) quickWrap.scrollIntoView({ block: "nearest", behavior: "smooth" });
   });
   function updatePreview() {
     var d = Math.min(size, 30);
@@ -197,17 +116,7 @@
     syncCurrentColor();
   }
   sizeIn.addEventListener("input", function () { size = Math.round(+sizeIn.value); updatePreview(); });
-  renderPalette(BASES, BASE_NAMES);
 
-  // ---------- Phase 3/4: easy-access colour swatches (rail) + mobile favourites ----------
-  var quickWrap = document.getElementById("quickColors");
-  var quickBtns = quickWrap ? [].slice.call(quickWrap.querySelectorAll(".qsw")) : [];
-  var miniFavBtns = [].slice.call(document.querySelectorAll("#miniFavs .mfav"));
-  function clearDockColorSel() {
-    pal.querySelectorAll(".swatch").forEach(function (s) { s.classList.remove("on"); });
-    shadesEl.querySelectorAll(".shade").forEach(function (s) { s.classList.remove("on"); });
-  }
-  // reflect the active colour on both the rail swatches and the mini favourites
   function highlightColor(hex) {
     var h = hex ? hex.toLowerCase() : null;
     quickBtns.forEach(function (b) {
@@ -215,30 +124,16 @@
       b.classList.toggle("on", !!on);
       b.setAttribute("aria-pressed", on ? "true" : "false");
     });
-    miniFavBtns.forEach(function (b) {
-      var on = h && b.getAttribute("data-color").toLowerCase() === h;
-      b.setAttribute("aria-pressed", on ? "true" : "false");
-    });
   }
   function setColorHex(hex) {
     color = hex; shade = hex;
     highlightColor(hex);
-    clearDockColorSel();
-    updatePreview();   // syncs the current-colour swatches + size preview everywhere
+    updatePreview();   // syncs the current-colour swatch + size preview
   }
   quickBtns.forEach(function (b) {
     b.addEventListener("click", function () { setColorHex(b.getAttribute("data-color")); });
   });
-  miniFavBtns.forEach(function (b) {
-    b.addEventListener("click", function () { setColorHex(b.getAttribute("data-color")); });
-  });
-  var moreColorsBtn = document.getElementById("moreColors");
-  if (moreColorsBtn) moreColorsBtn.addEventListener("click", function () {
-    var t = document.querySelector('.tab[data-panel="panelColors"]');
-    if (t) t.click();                 // reveal the full pastel palette in the dock
-    var panel = document.getElementById("panelColors");
-    if (panel && panel.scrollIntoView) panel.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  });
+  setColorHex(color);
 
   // ---------- tools ----------
   var toolsEl = document.getElementById("tools");
@@ -248,14 +143,6 @@
       b.classList.toggle("on", on);
       b.setAttribute("aria-pressed", on ? "true" : "false");
     });
-    // mirror the active tool onto the mobile mini toolbar
-    var mu = document.getElementById("miniToolEmoji");
-    if (mu) {
-      var emap = { pencil: "✏️", marker: "🖊️", crayon: "🖍️", spray: "💨", fill: "🪣", eraser: "🧽", stamp: "✨" };
-      mu.textContent = emap[tool] || "✏️";
-    }
-    var me = document.getElementById("miniEraser");
-    if (me) me.setAttribute("aria-pressed", tool === "eraser" ? "true" : "false");
     if (tool !== "eraser" && tool !== "stamp") lastDrawTool = tool;
     if (tool !== "stamp") markPal(null);
   }
@@ -359,16 +246,6 @@
     img.onerror = function () { toast("Could not load " + pal.name + " — try again"); };
     img.src = pal.src;
   }
-
-  // ---------- dock tabs ----------
-  document.querySelectorAll(".tab").forEach(function (t) {
-    t.addEventListener("click", function () {
-      document.querySelectorAll(".tab").forEach(function (x) { x.classList.remove("on"); });
-      document.querySelectorAll(".panel").forEach(function (x) { x.classList.remove("on"); });
-      t.classList.add("on");
-      document.getElementById(t.getAttribute("data-panel")).classList.add("on");
-    });
-  });
 
   // ---------- pal grid ----------
   var grid = document.getElementById("stampGrid");
@@ -480,8 +357,6 @@
   function updateHistoryButtons() {
     undoBtn.disabled = undoStack.length === 0;
     redoBtn.disabled = redoStack.length === 0;
-    var mu = document.getElementById("miniUndo");
-    if (mu) mu.disabled = undoStack.length === 0;
   }
   function pushUndo() {
     try {
@@ -740,7 +615,17 @@
     else if (tool === "marker") markerPath();
     else seg(last, p);
   });
-  function endStroke() { drawing = false; pts = []; snap = null; scheduleSave(); }
+  function endStroke(e) {
+    // A cancelled pointer means the browser took the gesture over (usually a
+    // two-finger pinch-zoom starting on the canvas) — revert the accidental
+    // mark so pinching never leaves a stray dot or line behind.
+    if (drawing && e && e.type === "pointercancel") {
+      var pre = undoStack.pop();
+      if (pre) ctx.putImageData(pre, 0, 0);
+      updateHistoryButtons();
+    }
+    drawing = false; pts = []; snap = null; scheduleSave();
+  }
   board.addEventListener("pointerup", endStroke);
   board.addEventListener("pointercancel", endStroke);
 
@@ -821,70 +706,8 @@
   }
   boot();
 
-  // ---------- Phase 4: mobile drawer + left-handed mode ----------
+  // ---------- left-handed mode ----------
   var appEl = document.getElementById("app");
-  var railEl = document.getElementById("rail");
-  var drawerToggle = document.getElementById("drawerToggle");
-  var drawerClose = document.getElementById("drawerClose");
-  var drawerScrim = document.getElementById("drawerScrim");
-  var drawerReturnFocus = null;
-
-  function drawerFocusables() {
-    return [].slice.call(railEl.querySelectorAll(
-      'button:not([disabled]),[href],input,[tabindex]:not([tabindex="-1"])'
-    )).filter(function (el) { return el.offsetWidth > 0 || el.offsetHeight > 0; });
-  }
-  function openDrawer() {
-    if (appEl.classList.contains("drawer-open")) return;
-    drawerReturnFocus = document.activeElement;
-    if (drawerScrim) drawerScrim.hidden = false;
-    appEl.classList.add("drawer-open");
-    if (drawerToggle) drawerToggle.setAttribute("aria-expanded", "true");
-    railEl.setAttribute("role", "dialog");
-    railEl.setAttribute("aria-modal", "true");
-    setTimeout(function () { if (drawerClose) drawerClose.focus(); }, 40);
-    document.addEventListener("keydown", drawerKeydown, true);
-  }
-  function closeDrawer() {
-    if (!appEl.classList.contains("drawer-open")) return;
-    appEl.classList.remove("drawer-open");
-    if (drawerToggle) drawerToggle.setAttribute("aria-expanded", "false");
-    railEl.removeAttribute("role");
-    railEl.removeAttribute("aria-modal");
-    document.removeEventListener("keydown", drawerKeydown, true);
-    setTimeout(function () {
-      if (drawerScrim && !appEl.classList.contains("drawer-open")) drawerScrim.hidden = true;
-    }, 300);
-    var back = drawerReturnFocus && drawerReturnFocus.focus ? drawerReturnFocus : drawerToggle;
-    if (back && back.focus) back.focus();
-  }
-  function drawerKeydown(e) {
-    if (e.key === "Escape") { e.preventDefault(); closeDrawer(); return; }
-    if (e.key !== "Tab") return;
-    var f = drawerFocusables();
-    if (!f.length) return;
-    var first = f[0], last = f[f.length - 1];
-    if (f.indexOf(document.activeElement) === -1) { e.preventDefault(); first.focus(); return; }
-    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-  }
-  if (drawerToggle) drawerToggle.addEventListener("click", function () {
-    if (appEl.classList.contains("drawer-open")) closeDrawer(); else openDrawer();
-  });
-  if (drawerClose) drawerClose.addEventListener("click", closeDrawer);
-  if (drawerScrim) drawerScrim.addEventListener("click", closeDrawer);
-
-  // mini toolbar proxies
-  function bindOpen(id) { var el = document.getElementById(id); if (el) el.addEventListener("click", openDrawer); }
-  bindOpen("miniTool"); bindOpen("miniSize"); bindOpen("miniColor");
-  var miniEraserBtn = document.getElementById("miniEraser");
-  if (miniEraserBtn) miniEraserBtn.addEventListener("click", function () {
-    tool = (tool === "eraser") ? (lastDrawTool || "pencil") : "eraser";
-    markTool();
-    setHint(HINTS[tool] || "");
-  });
-  var miniUndoBtn = document.getElementById("miniUndo");
-  if (miniUndoBtn) miniUndoBtn.addEventListener("click", function () { undoBtn.click(); });
 
   // left-handed preference, persisted locally
   var LH_KEY = "mochi-left-handed";
@@ -899,112 +722,6 @@
     applyLeftHanded(on);
     try { localStorage.setItem(LH_KEY, on ? "1" : "0"); } catch (e) { }
   });
-
-  // ---------- optional Supabase gallery ----------
-  var CFG = window.KAWAII_CONFIG || {};
-  var sb = null;
-  if (CFG.supabaseUrl && CFG.supabaseAnonKey && window.supabase) {
-    sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey);
-    document.getElementById("shareBtn").hidden = false;
-    document.getElementById("galleryBtn").hidden = false;
-  }
-  // Android back button: an open dialog gets its own history entry, so the
-  // hardware/gesture back closes the dialog instead of leaving the app.
-  // The dialog "close" event is unreliable in some WebViews, so every close
-  // path pops the entry explicitly instead of listening for it.
-  function openDialog(d) {
-    // Only one dialog is ever open; never stack a second marker entry.
-    try { if (!(history.state && history.state.mochiDialog)) history.pushState({ mochiDialog: d.id }, ""); } catch (e) { }
-    d.showModal();
-  }
-  function popDialogState() {
-    if (history.state && history.state.mochiDialog) history.back();
-  }
-  function closeDialog(d) {
-    d.close();
-    popDialogState(d);
-  }
-  window.addEventListener("popstate", function () {
-    document.querySelectorAll("dialog[open]").forEach(function (d) { d.close(); });
-  });
-  document.querySelectorAll("dialog").forEach(function (d) {
-    d.addEventListener("cancel", function () {
-      setTimeout(function () { popDialogState(d); }, 0);
-    });
-  });
-
-  var galleryDialog = document.getElementById("galleryDialog");
-  document.getElementById("galleryBtn").addEventListener("click", function () {
-    loadGallery();
-    openDialog(galleryDialog);
-  });
-  document.getElementById("galleryClose").addEventListener("click", function () {
-    closeDialog(galleryDialog);
-  });
-
-  var shareDialog = document.getElementById("shareDialog");
-  document.getElementById("shareBtn").addEventListener("click", function () {
-    openDialog(shareDialog);
-  });
-  document.getElementById("shareForm").addEventListener("submit", function (e) {
-    // method="dialog" closes the dialog for both buttons; pop its history entry.
-    setTimeout(function () { popDialogState(shareDialog); }, 0);
-    if (e.submitter && e.submitter.value === "cancel") return;
-    if (!sb) return;
-    var title = document.getElementById("artTitle").value.trim() || "Untitled masterpiece";
-    var artist = document.getElementById("artArtist").value.trim() || "Anonymous artist";
-    compositeCanvas().toBlob(function (blob) {
-      if (!blob) { toast("Could not export the drawing"); return; }
-      var path = Date.now() + "-" + Math.random().toString(36).slice(2, 8) + ".png";
-      sb.storage.from("artworks").upload(path, blob, { contentType: "image/png" })
-        .then(function (res) {
-          if (res.error) throw res.error;
-          return sb.from("artworks").insert({ title: title, artist: artist, image_path: path });
-        })
-        .then(function (res) {
-          if (res.error) throw res.error;
-          toast("Shared to the gallery! 🌟");
-          loadGallery();
-        })
-        .catch(function (err) {
-          console.error(err);
-          toast("Sharing failed — check your Supabase setup");
-        });
-    }, "image/png");
-  });
-
-  function loadGallery() {
-    if (!sb) return;
-    sb.from("artworks")
-      .select("title, artist, image_path, created_at")
-      .order("created_at", { ascending: false })
-      .limit(24)
-      .then(function (res) {
-        if (res.error) { console.error(res.error); return; }
-        var g = document.getElementById("galleryGrid");
-        g.innerHTML = "";
-        if (!res.data.length) {
-          var p = document.createElement("p");
-          p.className = "sub";
-          p.textContent = "No masterpieces yet — be the first to share one!";
-          g.appendChild(p);
-          return;
-        }
-        res.data.forEach(function (row) {
-          var galUrl = sb.storage.from("artworks").getPublicUrl(row.image_path).data.publicUrl;
-          var fig = document.createElement("figure");
-          var img = document.createElement("img");
-          img.src = galUrl;
-          img.alt = row.title + " by " + row.artist;
-          img.loading = "lazy";
-          var cap = document.createElement("figcaption");
-          cap.textContent = row.title + " · " + row.artist;
-          fig.appendChild(img);
-          fig.appendChild(cap);
-          g.appendChild(fig);
-        });
-      });
-  }
 
   // ---------- PWA: offline support (production only, keeps local dev simple) ----------
   if ("serviceWorker" in navigator && location.protocol === "https:") {
