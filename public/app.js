@@ -70,7 +70,22 @@
     { slug: "kero", name: "Kero", species: "frog", src: "coloring-pages/meadow/kero-frog.png", thumb: "coloring-pages/meadow/previews/kero-frog-color.png" },
     { slug: "hachi", name: "Hachi", species: "bee", src: "coloring-pages/meadow/hachi-bee.png", thumb: "coloring-pages/meadow/previews/hachi-bee-color.png" }
   ];
-  var IMAGE_PALS = MEADOW_PALS.concat(FOREST_PALS);
+  // Barnyard + Snow Pals use the same image-based page format (July 2026),
+  // rendered from the shared pals.js art — replace the PNGs in place to
+  // upgrade the artwork without touching code.
+  var BARNYARD_PALS = [
+    { slug: "miruku", name: "Miruku", species: "cow", src: "coloring-pages/barnyard/miruku-cow.png", thumb: "coloring-pages/barnyard/previews/miruku-cow-color.png" },
+    { slug: "kobo", name: "Kobo", species: "puppy", src: "coloring-pages/barnyard/kobo-puppy.png", thumb: "coloring-pages/barnyard/previews/kobo-puppy-color.png" },
+    { slug: "piyo", name: "Piyo", species: "chick", src: "coloring-pages/barnyard/piyo-chick.png", thumb: "coloring-pages/barnyard/previews/piyo-chick-color.png" },
+    { slug: "kamo", name: "Kamo", species: "duck", src: "coloring-pages/barnyard/kamo-duck.png", thumb: "coloring-pages/barnyard/previews/kamo-duck-color.png" }
+  ];
+  var SNOW_PALS = [
+    { slug: "yuki", name: "Yuki", species: "pom pup", src: "coloring-pages/snow/yuki-pom-pup.png", thumb: "coloring-pages/snow/previews/yuki-pom-pup-color.png" },
+    { slug: "kori", name: "Kori", species: "polar bear", src: "coloring-pages/snow/kori-polar-bear.png", thumb: "coloring-pages/snow/previews/kori-polar-bear-color.png" },
+    { slug: "panpan", name: "Panpan", species: "panda", src: "coloring-pages/snow/panpan-panda.png", thumb: "coloring-pages/snow/previews/panpan-panda-color.png" },
+    { slug: "pen", name: "Pen", species: "penguin", src: "coloring-pages/snow/pen-penguin.png", thumb: "coloring-pages/snow/previews/pen-penguin-color.png" }
+  ];
+  var IMAGE_PALS = MEADOW_PALS.concat(FOREST_PALS, BARNYARD_PALS, SNOW_PALS);
   var undoStack = [], redoStack = [], drawing = false, pts = [], snap = null;
 
   var hint = document.getElementById("hint");
