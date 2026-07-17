@@ -48,8 +48,6 @@
   // ---------- state ----------
   var tool = "pencil", size = 10, color = "#F06292", shade = "#F06292";
   var lastDrawTool = "pencil";
-  var stampFn = null, stampLabel = "", stampBtns = [];
-  var palMode = "page";
   var pageFn = null, pageImg = null, pageName = "", lineData = null;
 
   // Forest Pals: finished PNG line-art coloring pages (see /coloring-pages/forest).
@@ -143,8 +141,7 @@
       b.classList.toggle("on", on);
       b.setAttribute("aria-pressed", on ? "true" : "false");
     });
-    if (tool !== "eraser" && tool !== "stamp") lastDrawTool = tool;
-    if (tool !== "stamp") markPal(null);
+    if (tool !== "eraser") lastDrawTool = tool;
   }
   toolsEl.querySelectorAll(".tbtn[data-tool]").forEach(function (b) {
     b.addEventListener("click", function () {
@@ -207,150 +204,10 @@
     lctx.putImageData(img, 0, 0);
     lineData = d;
   }
-  function loadPage(fn, name, slug) {
-    pageFn = fn; pageImg = null; pageName = name;
-    currentSlug = slug || "blank";
-    pushUndo();
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, W, H);
-    drawPage();
-    restoreProgress();
-    if (fn) {
-      setHint(name + " is ready to color! Grab the paint can to fill areas, or shade with the brushes.");
-      toast(name + " coloring page loaded 🎨");
-    } else {
-      setHint("Blank page — free drawing time!");
-      toast("Fresh blank page ✨");
-    }
-  }
-  // Image-based coloring pages (Forest Pals): same flow as procedural pals,
-  // but the line art comes from a PNG whose dark pixels become the outlines.
+  // The page to color is picked on the home screen and arrives via the
+  // /?pal=<slug> deep link — boot() below loads it (image-based pals from
+  // their PNG, procedural pals from pals.js, "blank" for free drawing).
   var forestImgCache = {};
-  function loadImagePage(pal) {
-    function apply(img) {
-      pageImg = img; pageFn = null;
-      pageName = pal.name + " the " + pal.species;
-      currentSlug = pal.slug;
-      pushUndo();
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, W, H);
-      drawPage();
-      restoreProgress();
-      setHint(pageName + " is ready to color! Grab the paint can to fill areas, or shade with the brushes.");
-      toast(pageName + " coloring page loaded 🎨");
-    }
-    if (forestImgCache[pal.slug]) { apply(forestImgCache[pal.slug]); return; }
-    setHint("Loading " + pal.name + "…");
-    var img = new Image();
-    img.onload = function () { forestImgCache[pal.slug] = img; apply(img); };
-    img.onerror = function () { toast("Could not load " + pal.name + " — try again"); };
-    img.src = pal.src;
-  }
-
-  // ---------- pal grid ----------
-  var grid = document.getElementById("stampGrid");
-
-  var blankBtn = document.createElement("button");
-  blankBtn.className = "stamp";
-  blankBtn.title = "Blank page";
-  var blankFace = document.createElement("div");
-  blankFace.textContent = "✨";
-  blankFace.style.cssText = "width:72px;height:72px;display:flex;align-items:center;justify-content:center;font-size:30px;";
-  var blankLabel = document.createElement("b");
-  blankLabel.textContent = "Blank";
-  blankBtn.appendChild(blankFace);
-  blankBtn.appendChild(blankLabel);
-  blankBtn.addEventListener("click", function () {
-    loadPage(null, "", "blank");
-    markPal(blankBtn);
-  });
-  grid.appendChild(blankBtn);
-  stampBtns.push(blankBtn);
-
-  // Meadow pals now open image-based coloring pages, so their procedural
-  // buttons only show in sticker-stamp mode (image buttons cover page mode).
-  var meadowStampBtns = [];
-  STAMPS.forEach(function (st) {
-    var b = document.createElement("button");
-    b.className = "stamp";
-    b.title = st[0] + " the " + st[1];
-    if (st[3] === "meadow") { b.hidden = true; meadowStampBtns.push(b); }
-    var pc = document.createElement("canvas");
-    var pd = Math.min(window.devicePixelRatio || 1, 2);
-    pc.width = Math.round(72 * pd); pc.height = Math.round(72 * pd);
-    pc.style.width = "72px"; pc.style.height = "72px";
-    var g = pc.getContext("2d");
-    g.setTransform(pd, 0, 0, pd, 0, 0);
-    withChar(g, 36, 34, 34, st[2], false);
-    var label = document.createElement("b");
-    label.textContent = st[0];
-    b.appendChild(pc);
-    b.appendChild(label);
-    b.addEventListener("click", function () {
-      if (palMode === "page") {
-        loadPage(st[2], st[0] + " the " + st[1], st[0].toLowerCase());
-        markPal(b);
-      } else {
-        stampFn = st[2];
-        stampLabel = st[0] + " the " + st[1];
-        tool = "stamp";
-        markTool();
-        markPal(b);
-        setHint(stampLabel + " selected — tap the canvas to stamp! The size slider makes them big or smol.");
-      }
-    });
-    stampBtns.push(b);
-    grid.appendChild(b);
-  });
-  // Forest Pals in the same grid: coloring pages only (they're finished PNG
-  // line art, not stampable vector pals), so they hide in sticker-stamp mode.
-  var forestBtns = [];
-  var forestBtnBySlug = {};
-  IMAGE_PALS.forEach(function (pal) {
-    var b = document.createElement("button");
-    b.className = "stamp";
-    b.title = pal.name + " the " + pal.species;
-    var im = document.createElement("img");
-    im.src = pal.thumb;
-    im.alt = "";
-    im.loading = "lazy";
-    im.style.cssText = "width:72px;height:72px;object-fit:contain;display:block;border-radius:12px;";
-    var label = document.createElement("b");
-    label.textContent = pal.name;
-    b.appendChild(im);
-    b.appendChild(label);
-    b.addEventListener("click", function () {
-      loadImagePage(pal);
-      markPal(b);
-    });
-    forestBtns.push(b);
-    forestBtnBySlug[pal.slug] = b;
-    stampBtns.push(b);
-    grid.appendChild(b);
-  });
-  function markPal(el) {
-    stampBtns.forEach(function (s) { s.classList.remove("on"); });
-    if (el) el.classList.add("on");
-  }
-
-  // mode chips
-  var modePage = document.getElementById("modePage"), modeStamp = document.getElementById("modeStamp");
-  modePage.addEventListener("click", function () {
-    palMode = "page";
-    modePage.classList.add("on"); modeStamp.classList.remove("on");
-    blankBtn.hidden = false;
-    forestBtns.forEach(function (b) { b.hidden = false; });
-    meadowStampBtns.forEach(function (b) { b.hidden = true; });
-    setHint("Tap a pal to open them as a coloring page!");
-  });
-  modeStamp.addEventListener("click", function () {
-    palMode = "stamp";
-    modeStamp.classList.add("on"); modePage.classList.remove("on");
-    blankBtn.hidden = true;
-    forestBtns.forEach(function (b) { b.hidden = true; });
-    meadowStampBtns.forEach(function (b) { b.hidden = false; });
-    setHint("Tap a pal, then tap the canvas to stamp them anywhere!");
-  });
 
   // ---------- undo / redo / clear / save ----------
   var undoBtn = document.getElementById("undoBtn"), redoBtn = document.getElementById("redoBtn");
@@ -596,7 +453,6 @@
     var p = pos(e);
     if (tool === "fill") { doFill(p[0], p[1]); return; }   // manages its own undo snapshot
     pushUndo();
-    if (tool === "stamp" && stampFn) { withChar(ctx, p[0], p[1], size * 4 * dpr, stampFn, false); scheduleSave(); return; }
     drawing = true;
     pts = [p];
     if (tool === "crayon") crayonSeg(p, p);
@@ -632,7 +488,7 @@
   // brush-size ring that follows the cursor
   var ring = document.getElementById("cursorRing"), wrap = document.getElementById("canvasWrap");
   function updateRing(e) {
-    if (tool === "fill" || tool === "stamp" || e.pointerType === "touch") { ring.style.display = "none"; return; }
+    if (tool === "fill" || e.pointerType === "touch") { ring.style.display = "none"; return; }
     var r = wrap.getBoundingClientRect();
     var d = tool === "eraser" ? size * 2.6 : tool === "marker" ? size * 2 : tool === "spray" ? size * 3.6 : Math.max(2, size * 0.7);
     ring.style.display = "block";
@@ -655,22 +511,35 @@
   markTool();
   initCanvas();
   // Deep link from the home page: /?pal=usagi opens that pal's coloring page,
-  // and /?pal=ellie (etc.) opens a Forest Pals image page in the same studio.
-  var startIdx = 0, startForest = null;
+  // /?pal=ellie (etc.) opens an image-based page, and /?pal=blank opens a
+  // blank canvas for free drawing.
+  var startIdx = 0, startForest = null, startBlank = false;
   try {
     var palParam = (new URLSearchParams(location.search).get("pal") || "").toLowerCase();
+    startBlank = palParam === "blank";
     STAMPS.forEach(function (st, i) {
       if (st[0].toLowerCase() === palParam) startIdx = i;
     });
     IMAGE_PALS.forEach(function (p) {
       if (p.slug === palParam) startForest = p;
     });
-    // No deep link: open the image-based Usagi page (the procedural
-    // meadow buttons are hidden in page mode, so don't default to one).
+    // No deep link: open the image-based Usagi page.
     if (!palParam) startForest = MEADOW_PALS[0];
   } catch (err) {}
   function boot() {
     if (!ready) { requestAnimationFrame(boot); return; }
+    if (startBlank) {
+      pageFn = null; pageImg = null; pageName = "";
+      currentSlug = "blank";
+      drawPage();
+      restoreProgress();
+      setHint("Blank page — free drawing time!");
+      undoStack = [];
+      updateHistoryButtons();
+      syncCurrentColor();
+      hideSplash();
+      return;
+    }
     if (startForest) {
       var pal = startForest;
       pageName = pal.name + " the " + pal.species;
@@ -681,7 +550,6 @@
         pageImg = img; pageFn = null;
         drawPage();
         restoreProgress();
-        markPal(forestBtnBySlug[pal.slug]);
         setHint(pageName + " is ready to color! Grab the paint can to fill areas, or shade with the brushes.");
         undoStack = [];
         updateHistoryButtons();
@@ -697,7 +565,6 @@
     currentSlug = STAMPS[startIdx][0].toLowerCase();
     drawPage();
     restoreProgress();
-    markPal(stampBtns[startIdx + 1]);
     setHint(pageName + " is ready to color! Grab the paint can to fill areas, or shade with the brushes.");
     undoStack = [];
     updateHistoryButtons();
