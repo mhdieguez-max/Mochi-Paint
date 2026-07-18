@@ -120,10 +120,10 @@
 
   var hint = document.getElementById("hint");
   var HINTS = {
-    pencil: "Pencil selected — draw on the canvas",
-    marker: "Marker selected — strokes layer softly like real ink",
-    crayon: "Crayon selected — waxy, textured strokes",
-    spray: "Spray selected — hold and move to airbrush",
+    pencil: "Pencil selected — draw on the canvas (it stays inside the lines!)",
+    marker: "Marker selected — strokes layer softly and stay inside the lines",
+    crayon: "Crayon selected — waxy strokes that stay inside the lines",
+    spray: "Spray selected — hold and move to airbrush inside the lines",
     fill: "Paint can selected — tap an area to fill it (it stays inside the lines!)",
     eraser: "Eraser selected — cleans up paint but never the outlines"
   };
@@ -223,12 +223,17 @@
     try { data = localStorage.getItem(SAVE_PREFIX + currentSlug); } catch (e) { }
     if (!data) return;
     var img = new Image();
-    img.onload = function () { ctx.drawImage(img, 0, 0, W, H); };
+    img.onload = function () {
+      ctx.drawImage(img, 0, 0, W, H);
+      boardDirty = true;   // restored paint has no in-session history, but the
+      updateHistoryButtons();   // undo button can still reset to a fresh page
+    };
     img.src = data;
   }
 
   function drawPage() {
     lctx.clearRect(0, 0, W, H);
+    maskCanvas = null; maskBits = null;   // region masks depend on lineData
     if (!pageFn && !pageImg) { lineData = null; return; }
     if (pageImg) {
       // image-based coloring page (e.g. Forest Pals): fit centred with a margin
@@ -256,11 +261,17 @@
 
   // ---------- undo / redo / clear / save ----------
   var undoBtn = document.getElementById("undoBtn"), redoBtn = document.getElementById("redoBtn");
+  // boardDirty tracks "there may be paint on the page" so the undo button can
+  // offer one final step — back to a completely fresh page — even after the
+  // recorded history runs out (e.g. many strokes, or progress restored from a
+  // previous visit that has no in-session history).
+  var boardDirty = false;
   function updateHistoryButtons() {
-    undoBtn.disabled = undoStack.length === 0;
+    undoBtn.disabled = undoStack.length === 0 && !boardDirty;
     redoBtn.disabled = redoStack.length === 0;
   }
   function pushUndo() {
+    boardDirty = true;
     try {
       undoStack.push(ctx.getImageData(0, 0, W, H));
       if (undoStack.length > 15) undoStack.shift();
@@ -268,9 +279,34 @@
     } catch (e) { }
     updateHistoryButtons();
   }
+  function boardIsPristine() {
+    try {
+      var d = ctx.getImageData(0, 0, W, H).data;
+      for (var i = 0; i < d.length; i += 4) {
+        if (d[i] !== 255 || d[i + 1] !== 255 || d[i + 2] !== 255) return false;
+      }
+      return true;
+    } catch (e) { return false; }   // can't read pixels? assume there's paint so undo still resets
+  }
   undoBtn.addEventListener("click", function () {
     var im = undoStack.pop();
-    if (!im) { toast("Nothing to undo"); updateHistoryButtons(); return; }
+    if (!im) {
+      // Out of recorded steps: one last undo resets the page to its fresh,
+      // unpainted state so kids can always walk all the way back.
+      if (!boardIsPristine()) {
+        try { redoStack.push(ctx.getImageData(0, 0, W, H)); } catch (e) { }
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, W, H);
+        boardDirty = false;
+        scheduleSave();
+        toast("Back to a fresh page ✨ (redo brings the paint back)");
+      } else {
+        boardDirty = false;
+        toast("Nothing to undo");
+      }
+      updateHistoryButtons();
+      return;
+    }
     try { redoStack.push(ctx.getImageData(0, 0, W, H)); } catch (e) { }
     ctx.putImageData(im, 0, 0);
     updateHistoryButtons();
@@ -281,6 +317,7 @@
     if (!im) { toast("Nothing to redo"); updateHistoryButtons(); return; }
     try { undoStack.push(ctx.getImageData(0, 0, W, H)); } catch (e) { }
     ctx.putImageData(im, 0, 0);
+    boardDirty = true;
     updateHistoryButtons();
     scheduleSave();
   });
@@ -302,6 +339,8 @@
     pushUndo();
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, W, H);
+    boardDirty = false;   // page is fresh again (the snapshot above still restores it)
+    updateHistoryButtons();
     scheduleSave();
     toast(pageFn ? "Paint cleared — the outlines are safe! (undo brings paint back)" : "Fresh canvas! (undo brings it back)");
   });
@@ -374,53 +413,137 @@
     var r = board.getBoundingClientRect();
     return [(e.clientX - r.left) * (board.width / r.width), (e.clientY - r.top) * (board.height / r.height)];
   }
-  function seg(a, b) {
-    ctx.lineCap = "round"; ctx.lineJoin = "round";
-    ctx.strokeStyle = tool === "eraser" ? "#ffffff" : shade;
-    ctx.lineWidth = (tool === "eraser" ? size * 2.6 : Math.max(1, size * 0.7)) * dpr;
-    ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+
+  // ---------- stay-inside-the-lines stroke clipping ----------
+  // Every brush stroke is confined to the enclosed region it STARTS in — the
+  // same outline walls the paint can respects (lineData) — so coloring can
+  // never run outside the lines. The blank free-draw page stays unclipped.
+  // Strokes draw onto a scratch canvas, get masked to the start region, and
+  // are then composited onto the board.
+  var scratch = document.createElement("canvas"), sctx = scratch.getContext("2d");
+  var maskCanvas = null;   // alpha mask of the region the stroke may paint in
+  var maskBits = null;     // Uint8Array membership map for the cached mask
+  var strokeClip = false;  // whether the active stroke is clipped to maskCanvas
+
+  function isWallAt(x, y) {
+    return lineData && lineData[(y * W + x) * 4 + 3] > 60;
+  }
+  // If the tap lands on an outline, look for the nearest open pixel nearby so
+  // a slightly-off tap still colors the region the child meant.
+  function findRegionSeed(x, y) {
+    x = Math.max(0, Math.min(W - 1, Math.round(x)));
+    y = Math.max(0, Math.min(H - 1, Math.round(y)));
+    if (!isWallAt(x, y)) return [x, y];
+    var R = Math.round(8 * dpr);
+    for (var r = 1; r <= R; r++) {
+      for (var a = 0; a < 16; a++) {
+        var nx = Math.round(x + Math.cos(a / 16 * 6.283) * r);
+        var ny = Math.round(y + Math.sin(a / 16 * 6.283) * r);
+        if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+        if (!isWallAt(nx, ny)) return [nx, ny];
+      }
+    }
+    return null;
+  }
+  function buildRegionMask(x, y) {
+    var seen = new Uint8Array(W * H), stack = [x, y];
+    var img = ctx.createImageData(W, H), od = img.data;
+    while (stack.length) {
+      var py = stack.pop(), px = stack.pop();
+      if (px < 0 || py < 0 || px >= W || py >= H) continue;
+      var idx = py * W + px;
+      if (seen[idx]) continue;
+      if (lineData[idx * 4 + 3] > 60) continue;
+      seen[idx] = 1;
+      od[idx * 4 + 3] = 255;
+      stack.push(px + 1, py, px - 1, py, px, py + 1, px, py - 1);
+    }
+    var c = document.createElement("canvas");
+    c.width = W; c.height = H;
+    c.getContext("2d").putImageData(img, 0, 0);
+    maskBits = seen;
+    return c;
+  }
+  // Prepare clipping for a stroke starting at p. Returns false only when the
+  // stroke starts squarely on an outline (nothing sensible to clip to).
+  function beginStrokeClip(p) {
+    strokeClip = false;
+    if (!lineData) return true;   // blank page: free drawing, no clipping
+    var seed = findRegionSeed(p[0], p[1]);
+    if (!seed) return false;
+    var idx = seed[1] * W + seed[0];
+    if (!(maskCanvas && maskBits && maskBits[idx])) {
+      maskCanvas = buildRegionMask(seed[0], seed[1]);   // also refreshes maskBits
+    }
+    strokeClip = true;
+    return true;
+  }
+  // Draw one brush step: drawFn paints onto a context; the result is clipped
+  // to the start region (when clipping is on) and composited onto the board.
+  function paintThrough(drawFn, alpha) {
+    if (scratch.width !== W || scratch.height !== H) { scratch.width = W; scratch.height = H; }
+    sctx.clearRect(0, 0, W, H);
+    drawFn(sctx);
+    if (strokeClip && maskCanvas) {
+      sctx.globalCompositeOperation = "destination-in";
+      sctx.drawImage(maskCanvas, 0, 0);
+      sctx.globalCompositeOperation = "source-over";
+    }
+    ctx.globalAlpha = alpha || 1;
+    ctx.drawImage(scratch, 0, 0);
+    ctx.globalAlpha = 1;
+  }
+
+  function seg(a, b, g) {
+    g.lineCap = "round"; g.lineJoin = "round";
+    g.strokeStyle = tool === "eraser" ? "#ffffff" : shade;
+    g.lineWidth = (tool === "eraser" ? size * 2.6 : Math.max(1, size * 0.7)) * dpr;
+    g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke();
   }
   function markerPath() {
     if (!snap) return;
     ctx.putImageData(snap, 0, 0);
-    ctx.lineCap = "round"; ctx.lineJoin = "round";
-    ctx.globalAlpha = 0.4; ctx.strokeStyle = shade; ctx.lineWidth = size * 2 * dpr;
-    ctx.beginPath();
-    ctx.moveTo(pts[0][0], pts[0][1]);
-    if (pts.length === 1) ctx.lineTo(pts[0][0] + 0.1, pts[0][1]);
-    for (var i = 1; i < pts.length; i++) {
-      var mx = (pts[i - 1][0] + pts[i][0]) / 2, my = (pts[i - 1][1] + pts[i][1]) / 2;
-      ctx.quadraticCurveTo(pts[i - 1][0], pts[i - 1][1], mx, my);
-    }
-    ctx.stroke();
-    ctx.globalAlpha = 1;
+    // The path is drawn opaque, then composited at marker alpha, so the whole
+    // stroke keeps one even ink tone no matter how it overlaps itself.
+    paintThrough(function (g) {
+      g.lineCap = "round"; g.lineJoin = "round";
+      g.strokeStyle = shade; g.lineWidth = size * 2 * dpr;
+      g.beginPath();
+      g.moveTo(pts[0][0], pts[0][1]);
+      if (pts.length === 1) g.lineTo(pts[0][0] + 0.1, pts[0][1]);
+      for (var i = 1; i < pts.length; i++) {
+        var mx = (pts[i - 1][0] + pts[i][0]) / 2, my = (pts[i - 1][1] + pts[i][1]) / 2;
+        g.quadraticCurveTo(pts[i - 1][0], pts[i - 1][1], mx, my);
+      }
+      g.stroke();
+    }, 0.4);
   }
-  function crayonSeg(a, b) {
+  function crayonSeg(a, b, g) {
     var dx = b[0] - a[0], dy = b[1] - a[1];
     var steps = Math.ceil(Math.max(1, Math.hypot(dx, dy)) / (2 * dpr));
-    ctx.fillStyle = shade;
+    g.fillStyle = shade;
     for (var i = 0; i <= steps; i++) {
       var t = i / steps, x = a[0] + dx * t, y = a[1] + dy * t;
       for (var k = 0; k < 3; k++) {
-        ctx.globalAlpha = 0.15 + Math.random() * 0.35;
+        g.globalAlpha = 0.15 + Math.random() * 0.35;
         var ox = (Math.random() - 0.5) * size * dpr, oy = (Math.random() - 0.5) * size * dpr;
-        ctx.beginPath();
-        ctx.arc(x + ox, y + oy, (0.5 + Math.random() * 0.45) * size * 0.45 * dpr, 0, TAU);
-        ctx.fill();
+        g.beginPath();
+        g.arc(x + ox, y + oy, (0.5 + Math.random() * 0.45) * size * 0.45 * dpr, 0, TAU);
+        g.fill();
       }
     }
-    ctx.globalAlpha = 1;
+    g.globalAlpha = 1;
   }
-  function sprayAt(x, y) {
-    ctx.fillStyle = shade;
+  function sprayAt(x, y, g) {
+    g.fillStyle = shade;
     for (var i = 0; i < 28; i++) {
       var ang = Math.random() * 6.283, rad = Math.random() * size * 1.8 * dpr;
-      ctx.globalAlpha = 0.25 + Math.random() * 0.4;
-      ctx.beginPath();
-      ctx.arc(x + Math.cos(ang) * rad, y + Math.sin(ang) * rad, (0.6 + Math.random()) * dpr, 0, TAU);
-      ctx.fill();
+      g.globalAlpha = 0.25 + Math.random() * 0.4;
+      g.beginPath();
+      g.arc(x + Math.cos(ang) * rad, y + Math.sin(ang) * rad, (0.6 + Math.random()) * dpr, 0, TAU);
+      g.fill();
     }
-    ctx.globalAlpha = 1;
+    g.globalAlpha = 1;
   }
   // Boundary-aware flood fill on the PAINT layer only. Outline pixels on the
   // separate line-art layer (lineData, sampled once per page) act as walls, so
@@ -473,12 +596,13 @@
       wrap.classList.remove("busy");
       filling = false;
       if (res && res.filled > 0) {
+        boardDirty = true;
         if (pre) {
           undoStack.push(pre);
           if (undoStack.length > 15) undoStack.shift();
           redoStack = [];
-          updateHistoryButtons();
         }
+        updateHistoryButtons();
         scheduleSave();
         setHint(res.border
           ? "Filled! 🪣 (that area was open at the edges — close the gaps to fill just one spot)"
@@ -497,13 +621,17 @@
     try { board.setPointerCapture(e.pointerId); } catch (err) { }
     var p = pos(e);
     if (tool === "fill") { doFill(p[0], p[1]); return; }   // manages its own undo snapshot
+    if (!beginStrokeClip(p)) {
+      setHint("That's an outline — start inside an area to color it ✏️");
+      return;
+    }
     pushUndo();
     drawing = true;
     pts = [p];
-    if (tool === "crayon") crayonSeg(p, p);
-    else if (tool === "spray") sprayAt(p[0], p[1]);
+    if (tool === "crayon") paintThrough(function (g) { crayonSeg(p, p, g); });
+    else if (tool === "spray") paintThrough(function (g) { sprayAt(p[0], p[1], g); });
     else if (tool === "marker") { snap = ctx.getImageData(0, 0, W, H); markerPath(); }
-    else seg(p, [p[0] + 0.1, p[1]]);
+    else paintThrough(function (g) { seg(p, [p[0] + 0.1, p[1]], g); });
   });
   board.addEventListener("pointermove", function (e) {
     updateRing(e);
@@ -511,10 +639,10 @@
     var p = pos(e), last = pts[pts.length - 1];
     if (Math.hypot(p[0] - last[0], p[1] - last[1]) < 1.5 * dpr) return;
     pts.push(p);
-    if (tool === "crayon") crayonSeg(last, p);
-    else if (tool === "spray") sprayAt(p[0], p[1]);
+    if (tool === "crayon") paintThrough(function (g) { crayonSeg(last, p, g); });
+    else if (tool === "spray") paintThrough(function (g) { sprayAt(p[0], p[1], g); });
     else if (tool === "marker") markerPath();
-    else seg(last, p);
+    else paintThrough(function (g) { seg(last, p, g); });
   });
   function endStroke(e) {
     // A cancelled pointer means the browser took the gesture over (usually a
@@ -579,7 +707,7 @@
       drawPage();
       restoreProgress();
       setHint("Blank page — free drawing time!");
-      undoStack = [];
+      undoStack = []; redoStack = []; boardDirty = false;
       updateHistoryButtons();
       syncCurrentColor();
       hideSplash();
@@ -596,7 +724,7 @@
         drawPage();
         restoreProgress();
         setHint(pageName + " is ready to color! Grab the paint can to fill areas, or shade with the brushes.");
-        undoStack = [];
+        undoStack = []; redoStack = []; boardDirty = false;
         updateHistoryButtons();
         hideSplash();
       };
@@ -611,7 +739,7 @@
     drawPage();
     restoreProgress();
     setHint(pageName + " is ready to color! Grab the paint can to fill areas, or shade with the brushes.");
-    undoStack = [];
+    undoStack = []; redoStack = []; boardDirty = false;
     updateHistoryButtons();
     syncCurrentColor();
     hideSplash();
