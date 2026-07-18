@@ -51,10 +51,29 @@ body{margin:0;font-family:'Poppins',system-ui,sans-serif;color:#666;
 .abtn:active{transform:translateY(0);box-shadow:0 4px 12px rgba(200,160,220,.2)}
 .abtn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:0 4px 12px rgba(200,160,220,.2)}
 
-/* ---------- stage: canvas card + right sidebar ---------- */
+/* ---------- stage: workspace (fitted page + zoom) + right sidebar ---------- */
 .stage{flex:1;display:flex;min-height:0}
-.canvas-wrap{position:relative;flex:1;min-width:0;border-radius:24px;overflow:hidden;
-  background:#fff;box-shadow:0 4px 16px rgba(200,160,220,.12)}
+/* The workspace is the visible drawing area. The white page card inside it is
+   JS-sized to the coloring page's contain-fit (no tall blank canvas), centered,
+   and zoom/pan happen via a transform on the card — pointer math stays correct
+   because getBoundingClientRect() reflects transforms. */
+.workspace{position:relative;flex:1;min-width:0;min-height:0;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;touch-action:none}
+.canvas-wrap{position:relative;width:100%;height:100%;flex:0 0 auto;
+  border-radius:24px;overflow:hidden;background:#fff;
+  box-shadow:0 4px 16px rgba(200,160,220,.12);will-change:transform}
+
+/* zoom controls: bottom-right of the workspace */
+.zoomctl{position:absolute;right:10px;bottom:10px;display:flex;flex-direction:column;gap:8px;z-index:6}
+.zbtn{width:44px;height:44px;border-radius:14px;border:none;background:#fff;
+  box-shadow:0 4px 12px rgba(200,160,220,.2);cursor:pointer;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .2s ease,box-shadow .2s ease,opacity .2s ease}
+.zbtn svg{width:22px;height:22px;display:block;pointer-events:none}
+.zbtn:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(200,160,220,.32)}
+.zbtn:active{transform:translateY(0)}
+.zbtn:disabled{opacity:.5;cursor:not-allowed;transform:none}
 
 .rail{flex:0 0 auto;width:280px;margin-left:16px;
   display:flex;flex-direction:column;gap:2px;padding:16px;
@@ -130,8 +149,9 @@ body{margin:0;font-family:'Poppins',system-ui,sans-serif;color:#666;
 }
 
 /* ---------- canvas ---------- */
-/* pinch-zoom stays with the browser; single-finger input goes to drawing */
-#board{display:block;width:100%;height:100%;touch-action:pinch-zoom;cursor:crosshair}
+/* the app handles two-finger pinch zoom/pan itself (workspace is
+   touch-action:none); single-finger input goes to drawing */
+#board{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 #lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 #cursorRing{position:absolute;border:1.5px solid rgba(45,45,45,.5);border-radius:50%;pointer-events:none;display:none;transform:translate(-50%,-50%)}
 .hint{position:absolute;top:12px;left:50%;transform:translateX(-50%);margin:0;max-width:92%;
@@ -158,40 +178,58 @@ body{margin:0;font-family:'Poppins',system-ui,sans-serif;color:#666;
   .qsw{width:36px}
 }
 
+/* phones: canvas gets the full width; controls move into a compact
+   horizontally-scrollable bottom tray (no permanent side column) */
 @media(max-width:640px){
-  #app{padding:calc(8px + env(safe-area-inset-top)) 8px calc(8px + env(safe-area-inset-bottom))}
-  .appbar{flex-direction:column;align-items:stretch;gap:6px;padding-bottom:8px}
-  .logo{align-self:flex-start;font-size:16px}
-  .actions{gap:6px;justify-content:space-between}
-  .abtn{flex:1;width:auto;min-width:44px;padding:8px 0;border-radius:14px}
-  .abtn svg{width:24px;height:24px}
-  .abtn span{font-size:9px}
-  /* compact icon sidebar: labels hide, one swatch per row, everything scrolls */
-  .rail{width:76px;margin-left:8px;padding:10px 8px}
-  #app.left-handed .rail{margin-right:8px}
-  .sec{justify-content:center;font-size:10px;letter-spacing:.4px;margin:10px 0 6px}
-  .sec .cc-btn{display:none}
-  .tbtn,.ubtn{justify-content:center;gap:0;padding:8px 4px}
-  .tbtn span,.ubtn span{display:none}
-  .rail-colors{grid-template-columns:1fr}
-  .qsw{width:40px}
-  .rail-size{flex-direction:column;gap:8px}
-  #size{width:100%}
-}
-
-/* mobile landscape: shorter chrome so the page stays tall */
-@media(orientation:landscape) and (max-height:500px){
-  #app{padding-top:calc(6px + env(safe-area-inset-top));padding-bottom:6px}
-  .appbar{flex-direction:row;align-items:center;padding-bottom:6px}
-  .logo{font-size:15px}
-  .abtn{flex:0 0 auto;width:56px;padding:6px 0}
+  #app{padding:calc(6px + env(safe-area-inset-top)) 8px calc(6px + env(safe-area-inset-bottom))}
+  .appbar{gap:6px;padding-bottom:6px;align-items:center}
+  .logo{font-size:15px;gap:3px}
+  .logo .bead{font-size:18px}
+  .actions{gap:6px;flex:1;justify-content:flex-end}
+  .abtn{flex:0 1 64px;width:auto;min-width:44px;padding:7px 0;border-radius:14px}
   .abtn svg{width:22px;height:22px}
   .abtn span{font-size:9px}
-  .rail{width:76px;margin-left:8px;padding:10px 8px}
-  .sec{justify-content:center;font-size:10px;margin:10px 0 6px}
-  .sec .cc-btn{display:none}
-  .tbtn,.ubtn{justify-content:center;gap:0;padding:8px 4px}
+  .stage,#app.left-handed .stage{flex-direction:column}
+  .rail{width:100%;height:auto;flex:0 0 auto;margin:8px 0 0;padding:8px;
+    flex-direction:row;align-items:center;gap:8px;
+    overflow-x:auto;overflow-y:hidden}
+  #app.left-handed .rail{margin:8px 0 0}
+  .sec{display:none}
+  .rail-tools,.rail-page{flex-direction:row;gap:8px;flex:0 0 auto}
+  .tbtn,.ubtn{width:auto;justify-content:center;gap:0;padding:8px;flex:0 0 auto}
   .tbtn span,.ubtn span{display:none}
-  .rail-colors{grid-template-columns:1fr}
-  .rail-size{flex-direction:column;gap:8px}
+  .rail-colors{display:flex;flex-direction:row;gap:8px;flex:0 0 auto}
+  .qsw{width:36px;flex:0 0 auto}
+  .rail-size{flex:0 0 auto;width:150px;gap:8px;padding:0 2px}
+  .zoomctl{right:8px;bottom:8px}
+}
+
+/* very narrow phones: drop the logo text so all five action cards fit */
+@media(max-width:480px){
+  .logo-text{display:none}
+  .logo .bead{font-size:22px}
+}
+
+/* mobile landscape: keep a compact icon side rail so the page stays tall */
+@media(orientation:landscape) and (max-height:500px){
+  #app{padding-top:calc(4px + env(safe-area-inset-top));padding-bottom:6px}
+  .appbar{flex-direction:row;align-items:center;padding-bottom:6px}
+  .logo{font-size:15px}
+  .abtn{flex:0 0 auto;width:56px;min-width:44px;padding:6px 0}
+  .abtn svg{width:22px;height:22px}
+  .abtn span{font-size:9px}
+  .stage{flex-direction:row}
+  .rail{width:76px;height:auto;margin:0 0 0 8px;padding:10px 8px;
+    flex-direction:column;align-items:stretch;gap:2px;overflow-y:auto;overflow-x:hidden}
+  #app.left-handed .rail{margin:0 8px 0 0}
+  .sec{display:flex;justify-content:center;font-size:10px;margin:10px 0 6px}
+  .sec:first-child{margin-top:0}
+  .sec .cc-btn{display:none}
+  .rail-tools,.rail-page{flex-direction:column;gap:8px}
+  .tbtn,.ubtn{width:100%;justify-content:center;gap:0;padding:8px 4px}
+  .tbtn span,.ubtn span{display:none}
+  .rail-colors{display:grid;grid-template-columns:1fr;gap:8px}
+  .qsw{width:40px}
+  .rail-size{flex-direction:column;gap:8px;width:auto}
+  #size{width:100%}
 }
