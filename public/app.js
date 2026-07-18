@@ -46,7 +46,7 @@
   }
 
   // ---------- state ----------
-  var tool = "pencil", size = 10, color = "#F06292", shade = "#F06292";
+  var tool = "pencil", size = 10, color = "#ec4899", shade = "#ec4899";
   var lastDrawTool = "pencil";
   var pageFn = null, pageImg = null, pageName = "", lineData = null;
 
@@ -376,13 +376,13 @@
       var idw = pageImg.width * isc, idh = pageImg.height * isc;
       g.drawImage(pageImg, (t.width - idw) / 2, 110, idw, idh);
       g.fillStyle = "#5A4A42";
-      g.font = "48px 'Baloo 2', cursive";
+      g.font = "600 48px 'Poppins', sans-serif";
       g.textAlign = "center";
       g.fillText("Mochi Paint · " + pageName, 700, 1680);
     } else if (pageFn) {
       withChar(g, 700, 840, 620, pageFn, true);
       g.fillStyle = "#5A4A42";
-      g.font = "48px 'Baloo 2', cursive";
+      g.font = "600 48px 'Poppins', sans-serif";
       g.textAlign = "center";
       g.fillText("Mochi Paint · " + pageName, 700, 1680);
     } else {
