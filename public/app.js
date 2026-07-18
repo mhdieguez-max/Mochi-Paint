@@ -85,7 +85,37 @@
     { slug: "panpan", name: "Panpan", species: "panda", src: "coloring-pages/snow/panpan-panda.png", thumb: "coloring-pages/snow/previews/panpan-panda-color.png" },
     { slug: "pen", name: "Pen", species: "penguin", src: "coloring-pages/snow/pen-penguin.png", thumb: "coloring-pages/snow/previews/pen-penguin-color.png" }
   ];
-  var IMAGE_PALS = MEADOW_PALS.concat(FOREST_PALS, BARNYARD_PALS, SNOW_PALS);
+  var DEN_PALS = [
+    { slug: "mochi", name: "Mochi", species: "cat loaf", src: "coloring-pages/den/mochi-cat-loaf.png", thumb: "coloring-pages/den/previews/mochi-cat-loaf-color.png" },
+    { slug: "kuma", name: "Kuma", species: "bear", src: "coloring-pages/den/kuma-bear.png", thumb: "coloring-pages/den/previews/kuma-bear-color.png" },
+    { slug: "hamu", name: "Hamu", species: "hamster", src: "coloring-pages/den/hamu-hamster.png", thumb: "coloring-pages/den/previews/hamu-hamster-color.png" },
+    { slug: "hari", name: "Hari", species: "hedgehog", src: "coloring-pages/den/hari-hedgehog.png", thumb: "coloring-pages/den/previews/hari-hedgehog-color.png" }
+  ];
+  var DINOSAUR_PALS = [
+    { slug: "rexi", name: "Rexi", species: "t-rex", src: "coloring-pages/dinosaurs/rexi-t-rex.png", thumb: "coloring-pages/dinosaurs/previews/rexi-t-rex-color.png" },
+    { slug: "trixie", name: "Trixie", species: "triceratops", src: "coloring-pages/dinosaurs/trixie-triceratops.png", thumb: "coloring-pages/dinosaurs/previews/trixie-triceratops-color.png" },
+    { slug: "spike", name: "Spike", species: "stegosaurus", src: "coloring-pages/dinosaurs/spike-stegosaurus.png", thumb: "coloring-pages/dinosaurs/previews/spike-stegosaurus-color.png" },
+    { slug: "ptera", name: "Ptera", species: "pterodactyl", src: "coloring-pages/dinosaurs/ptera-pterodactyl.png", thumb: "coloring-pages/dinosaurs/previews/ptera-pterodactyl-color.png" }
+  ];
+  var MERMAID_PALS = [
+    { slug: "marina", name: "Marina", species: "mermaid", src: "coloring-pages/mermaids/marina-mermaid.png", thumb: "coloring-pages/mermaids/previews/marina-mermaid-color.png" },
+    { slug: "coral", name: "Coral", species: "seahorse", src: "coloring-pages/mermaids/coral-seahorse.png", thumb: "coloring-pages/mermaids/previews/coral-seahorse-color.png" },
+    { slug: "jelli", name: "Jelli", species: "jellyfish", src: "coloring-pages/mermaids/jelli-jellyfish.png", thumb: "coloring-pages/mermaids/previews/jelli-jellyfish-color.png" },
+    { slug: "splash", name: "Splash", species: "dolphin", src: "coloring-pages/mermaids/splash-dolphin.png", thumb: "coloring-pages/mermaids/previews/splash-dolphin-color.png" }
+  ];
+  var HALLOWEEN_PALS = [
+    { slug: "patch", name: "Patch", species: "pumpkin", src: "coloring-pages/halloween/patch-pumpkin.png", thumb: "coloring-pages/halloween/previews/patch-pumpkin-color.png" },
+    { slug: "boo", name: "Boo", species: "ghost", src: "coloring-pages/halloween/boo-ghost.png", thumb: "coloring-pages/halloween/previews/boo-ghost-color.png" },
+    { slug: "miso", name: "Miso", species: "witch cat", src: "coloring-pages/halloween/miso-witch-cat.png", thumb: "coloring-pages/halloween/previews/miso-witch-cat-color.png" },
+    { slug: "nox", name: "Nox", species: "bat", src: "coloring-pages/halloween/nox-bat.png", thumb: "coloring-pages/halloween/previews/nox-bat-color.png" }
+  ];
+  var CHRISTMAS_PALS = [
+    { slug: "rudy", name: "Rudy", species: "reindeer", src: "coloring-pages/christmas/rudy-reindeer.png", thumb: "coloring-pages/christmas/previews/rudy-reindeer-color.png" },
+    { slug: "flurry", name: "Flurry", species: "snowman", src: "coloring-pages/christmas/flurry-snowman.png", thumb: "coloring-pages/christmas/previews/flurry-snowman-color.png" },
+    { slug: "piney", name: "Piney", species: "christmas tree", src: "coloring-pages/christmas/piney-christmas-tree.png", thumb: "coloring-pages/christmas/previews/piney-christmas-tree-color.png" },
+    { slug: "noel", name: "Noel", species: "santa bear", src: "coloring-pages/christmas/noel-santa-bear.png", thumb: "coloring-pages/christmas/previews/noel-santa-bear-color.png" }
+  ];
+  var IMAGE_PALS = MEADOW_PALS.concat(FOREST_PALS, BARNYARD_PALS, SNOW_PALS, DEN_PALS, DINOSAUR_PALS, MERMAID_PALS, HALLOWEEN_PALS, CHRISTMAS_PALS);
   var undoStack = [], redoStack = [], drawing = false, pts = [], snap = null;
 
   var hint = document.getElementById("hint");
