@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Mochi Paint — kawaii coloring studio</title>
 <meta name="description" content="A cozy kawaii coloring app: open a chunky pastel pal as a coloring page, fill inside the lines, and shade with soft brushes.">
-<meta name="theme-color" content="#FBE3EE">
+<meta name="theme-color" content="#f5e6f0">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
@@ -32,8 +32,8 @@
 <meta name="twitter:image" content="https://summer-silence-662e.mhdieguez.workers.dev/share-card.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=12">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=13">
 </head>
 <body>
 
@@ -58,14 +58,25 @@ setTimeout(function () {
   <header class="appbar">
     <span class="logo"><span class="bead" aria-hidden="true">🍡</span><span class="logo-text"> Mochi Paint</span></span>
     <div class="actions">
-      <a class="ibtn" id="homeBtn" href="/home" title="Back to home" aria-label="Back to home">
-        <svg class="nav-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 11.2 12 4.4l8 6.8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.2 10.4v7.4c0 .9.7 1.6 1.6 1.6h8.4c.9 0 1.6-.7 1.6-1.6v-7.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.2 19.4v-4.6c0-.7.6-1.3 1.3-1.3h1c.7 0 1.3.6 1.3 1.3v4.6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <a class="abtn" id="homeBtn" href="/home" title="Back to home" aria-label="Back to home">
+        <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M12 22.5h24V37a3 3 0 0 1-3 3H15a3 3 0 0 1-3-3z" fill="#ffffff" stroke="#2d2d2d" stroke-width="2.5" stroke-linejoin="round"/><path d="M8 23 24 8.5 40 23z" fill="#fce4f3" stroke="#2d2d2d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="20.5" y="28.5" width="7" height="11.5" rx="2.5" fill="#f4a4d4" stroke="#2d2d2d" stroke-width="2.5" stroke-linejoin="round"/><circle cx="32" cy="30" r="2.2" fill="#a8d5ff" stroke="#2d2d2d" stroke-width="2"/></svg>
+        <span>Home</span>
       </a>
-      <button class="ibtn" id="printBtn" title="Print coloring page" aria-label="Print coloring page">
-        <svg class="nav-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 8V4.6c0-.6.5-1.1 1.1-1.1h7.8c.6 0 1.1.5 1.1 1.1V8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 16H5.1c-.9 0-1.6-.7-1.6-1.6V9.6C3.5 8.7 4.2 8 5.1 8h13.8c.9 0 1.6.7 1.6 1.6v4.8c0 .9-.7 1.6-1.6 1.6h-1.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><rect x="7" y="13.4" width="10" height="7" rx="1.3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>
+      <button class="abtn" id="printBtn" title="Print coloring page" aria-label="Print coloring page">
+        <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><rect x="15" y="5.5" width="18" height="9" rx="2" fill="#ffffff" stroke="#2d2d2d" stroke-width="2.5" stroke-linejoin="round"/><rect x="8.5" y="13.5" width="31" height="13.5" rx="4" fill="#a8d5ff" stroke="#2d2d2d" stroke-width="2.5" stroke-linejoin="round"/><circle cx="34.5" cy="19" r="1.9" fill="#f4a4d4" stroke="#2d2d2d" stroke-width="2"/><rect x="15" y="24.5" width="18" height="16" rx="2.5" fill="#ffffff" stroke="#2d2d2d" stroke-width="2.5" stroke-linejoin="round"/><path d="M19.5 30.5h9.5" stroke="#f4a4d4" stroke-width="2.5" stroke-linecap="round"/><path d="M19.5 35h6.5" stroke="#f0d48f" stroke-width="2.5" stroke-linecap="round"/></svg>
+        <span>Print</span>
       </button>
-      <button class="ibtn" id="saveBtn" title="Save as PNG" aria-label="Save as PNG">
-        <svg class="nav-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v9.6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="m8 10.2 4 3.9 4-3.9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 15.6v2.8c0 .9.7 1.6 1.6 1.6h11.8c.9 0 1.6-.7 1.6-1.6v-2.8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <button class="abtn" id="saveBtn" title="Save as PNG" aria-label="Save as PNG">
+        <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M24 7v15" fill="none" stroke="#2d2d2d" stroke-width="3" stroke-linecap="round"/><path d="m16.5 15.5 7.5 7.5 7.5-7.5" fill="none" stroke="#2d2d2d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 27.5v7A6.5 6.5 0 0 0 15.5 41h17a6.5 6.5 0 0 0 6.5-6.5v-7" fill="#d4c4f0" stroke="#2d2d2d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Save</span>
+      </button>
+      <button class="abtn" id="undoBtn" title="Undo" aria-label="Undo">
+        <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M37 36c0-10-7.5-15-15-15h-6" fill="none" stroke="#f4a4d4" stroke-width="5" stroke-linecap="round" opacity=".55"/><path d="M35 34c0-9-7-14-14-14h-7" fill="none" stroke="#2d2d2d" stroke-width="3" stroke-linecap="round"/><path d="M20.5 13.5 14 20l6.5 6.5" fill="none" stroke="#2d2d2d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Undo</span>
+      </button>
+      <button class="abtn" id="redoBtn" title="Redo" aria-label="Redo">
+        <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M11 36c0-10 7.5-15 15-15h6" fill="none" stroke="#a8d5ff" stroke-width="5" stroke-linecap="round" opacity=".55"/><path d="M13 34c0-9 7-14 14-14h7" fill="none" stroke="#2d2d2d" stroke-width="3" stroke-linecap="round"/><path d="M27.5 13.5 34 20l-6.5 6.5" fill="none" stroke="#2d2d2d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Redo</span>
       </button>
     </div>
   </header>
@@ -79,56 +90,79 @@ setTimeout(function () {
     </div>
 
     <aside class="rail" id="rail" aria-label="Drawing toolbar">
+      <h3 class="sec">Tools</h3>
       <div class="rail-tools" id="tools" role="toolbar" aria-label="Drawing tools">
-        <button class="tbtn" data-tool="pencil" aria-pressed="true" aria-label="Pencil" title="Pencil"><em>✏️</em><span>Pencil</span></button>
-        <button class="tbtn" data-tool="marker" aria-pressed="false" aria-label="Marker" title="Marker"><em>🖊️</em><span>Marker</span></button>
-        <button class="tbtn" data-tool="crayon" aria-pressed="false" aria-label="Soft crayon" title="Soft crayon"><em>🖍️</em><span>Crayon</span></button>
-        <button class="tbtn" data-tool="spray" aria-pressed="false" aria-label="Spray" title="Spray"><em>💨</em><span>Spray</span></button>
-        <button class="tbtn" data-tool="fill" aria-pressed="false" aria-label="Paint can" title="Paint can"><em>🪣</em><span>Paint can</span></button>
-        <button class="tbtn" data-tool="eraser" aria-pressed="false" aria-label="Eraser" title="Eraser"><em>🧽</em><span>Eraser</span></button>
+        <button class="tbtn" data-tool="pencil" aria-pressed="true" aria-label="Pencil" title="Pencil">
+          <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M29 10.5 33.5 6c1.4-1.4 3.6-1.4 5 0s1.4 3.6 0 5L34 15.5z" fill="#f4a4d4" stroke="#2d2d2d" stroke-width="2.5" stroke-linejoin="round"/><path d="M13 26.5 29 10.5 38 19.5 22 35.5z" fill="#f0d48f" stroke="#2d2d2d" stroke-width="2.5" stroke-linejoin="round"/><path d="M13 26.5 22 35.5 8.5 40z" fill="#fce4f3" stroke="#2d2d2d" stroke-width="2.5" stroke-linejoin="round"/><path d="M11.5 34.5 14 37 8.5 40z" fill="#2d2d2d" stroke="#2d2d2d" stroke-width="1.5" stroke-linejoin="round"/></svg>
+          <span>Pencil</span>
+        </button>
+        <button class="tbtn" data-tool="marker" aria-pressed="false" aria-label="Marker" title="Marker">
+          <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><rect x="17" y="5" width="14" height="10" rx="3" fill="#7fb8e8" stroke="#2d2d2d" stroke-width="2.5" stroke-linejoin="round"/><rect x="15" y="15" width="18" height="20" rx="4" fill="#a8d5ff" stroke="#2d2d2d" stroke-width="2.5" stroke-linejoin="round"/><path d="M20 35h8l2.5 7.5h-13z" fill="#fce4f3" stroke="#2d2d2d" stroke-width="2.5" stroke-linejoin="round"/></svg>
+          <span>Marker</span>
+        </button>
+        <button class="tbtn" data-tool="crayon" aria-pressed="false" aria-label="Soft crayon" title="Soft crayon">
+          <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M24 5c3.2 0 5.5 4.5 5.5 8.5h-11C18.5 9.5 20.8 5 24 5z" fill="#f47c7c" stroke="#2d2d2d" stroke-width="2.5" stroke-linejoin="round"/><rect x="18.5" y="13.5" width="11" height="27" rx="3" fill="#f47c7c" stroke="#2d2d2d" stroke-width="2.5" stroke-linejoin="round"/><rect x="16.5" y="20.5" width="15" height="13" rx="2" fill="#ffb3b3" stroke="#2d2d2d" stroke-width="2.5" stroke-linejoin="round"/><circle cx="21.5" cy="25" r="1" fill="#2d2d2d"/><circle cx="26.5" cy="25" r="1" fill="#2d2d2d"/><path d="M21.5 28.5q2.5 2.3 5 0" fill="none" stroke="#2d2d2d" stroke-width="2" stroke-linecap="round"/></svg>
+          <span>Crayon</span>
+        </button>
+        <button class="tbtn" data-tool="spray" aria-pressed="false" aria-label="Spray" title="Spray">
+          <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><rect x="18.5" y="5" width="7" height="5.5" rx="1.5" fill="#f4a4d4" stroke="#2d2d2d" stroke-width="2.5" stroke-linejoin="round"/><rect x="16" y="10.5" width="12" height="4.5" rx="2" fill="#fce4f3" stroke="#2d2d2d" stroke-width="2.5" stroke-linejoin="round"/><rect x="13.5" y="15" width="17" height="26" rx="5" fill="#d4c4f0" stroke="#2d2d2d" stroke-width="2.5" stroke-linejoin="round"/><circle cx="22" cy="27" r="4.5" fill="#ffffff" stroke="#2d2d2d" stroke-width="2"/><circle cx="34" cy="7" r="2" fill="#a8d5ff"/><circle cx="39" cy="12" r="2.2" fill="#f4a4d4"/><circle cx="35" cy="17" r="1.8" fill="#f0d48f"/></svg>
+          <span>Spray</span>
+        </button>
+        <button class="tbtn" data-tool="fill" aria-pressed="false" aria-label="Paint can" title="Paint can">
+          <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><g transform="rotate(-18 24 22)"><path d="M14 15c0 2.2 4.5 4 10 4s10-1.8 10-4l-2 17c-.2 2.8-3.6 5-8 5s-7.8-2.2-8-5z" fill="#f0d48f" stroke="#2d2d2d" stroke-width="2.5" stroke-linejoin="round"/><ellipse cx="24" cy="15" rx="10" ry="4" fill="#ffffff" stroke="#2d2d2d" stroke-width="2.5"/></g><path d="M13.5 24q-6 5-5 13" fill="none" stroke="#a8d5ff" stroke-width="4.5" stroke-linecap="round"/><circle cx="7.5" cy="41.5" r="2.2" fill="#a8d5ff"/></svg>
+          <span>Paint can</span>
+        </button>
+        <button class="tbtn" data-tool="eraser" aria-pressed="false" aria-label="Eraser" title="Eraser">
+          <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M7.5 36.5q3-3 6 0t6 0" fill="none" stroke="#d4c4f0" stroke-width="2.5" stroke-linecap="round"/><path d="M10 42q3-3 6 0t5.5 0" fill="none" stroke="#d4c4f0" stroke-width="2.5" stroke-linecap="round"/><g transform="rotate(-35 30 22)"><rect x="20" y="15" width="20" height="13" rx="3.5" fill="#f4a4d4" stroke="#2d2d2d" stroke-width="2.5" stroke-linejoin="round"/><path d="M27 15v13" fill="none" stroke="#2d2d2d" stroke-width="2.5"/><path d="M23.5 15h3.5v13h-3.5z" fill="#fce4f3"/></g></svg>
+          <span>Eraser</span>
+        </button>
       </div>
-      <div class="rail-color">
-        <button class="cc-btn" id="currentColor" aria-label="Current color" title="Current color — tap to change"><span class="cc-dot" id="ccDot"></span></button>
-      </div>
+
+      <h3 class="sec">Colors
+        <button class="cc-btn" id="currentColor" aria-label="Current color" title="Current color"><span class="cc-dot" id="ccDot"></span></button>
+      </h3>
       <div class="rail-colors" id="quickColors" role="group" aria-label="Colors">
-        <button class="qsw light" data-color="#FFFFFF" style="--c:#FFFFFF" aria-pressed="false" aria-label="White" title="White"></button>
-        <button class="qsw light" data-color="#FFF3B8" style="--c:#FFF3B8" aria-pressed="false" aria-label="Cream" title="Cream"></button>
-        <button class="qsw light" data-color="#FFD3A8" style="--c:#FFD3A8" aria-pressed="false" aria-label="Peach" title="Peach"></button>
-        <button class="qsw light" data-color="#F8BBD0" style="--c:#F8BBD0" aria-pressed="false" aria-label="Light pink" title="Light pink"></button>
-        <button class="qsw light" data-color="#B5E3F7" style="--c:#B5E3F7" aria-pressed="false" aria-label="Light blue" title="Light blue"></button>
-        <button class="qsw light" data-color="#D7C7EE" style="--c:#D7C7EE" aria-pressed="false" aria-label="Lavender" title="Lavender"></button>
-        <button class="qsw light" data-color="#BCE8C9" style="--c:#BCE8C9" aria-pressed="false" aria-label="Mint" title="Mint"></button>
-        <button class="qsw light" data-color="#FFD23F" style="--c:#FFD23F" aria-pressed="false" aria-label="Yellow" title="Yellow"></button>
-        <button class="qsw" data-color="#F5892F" style="--c:#F5892F" aria-pressed="false" aria-label="Orange" title="Orange"></button>
-        <button class="qsw" data-color="#E8443B" style="--c:#E8443B" aria-pressed="false" aria-label="Red" title="Red"></button>
-        <button class="qsw" data-color="#F06292" style="--c:#F06292" aria-pressed="false" aria-label="Pink" title="Pink"></button>
-        <button class="qsw" data-color="#9B4DCA" style="--c:#9B4DCA" aria-pressed="false" aria-label="Purple" title="Purple"></button>
-        <button class="qsw" data-color="#4FC3F7" style="--c:#4FC3F7" aria-pressed="false" aria-label="Sky blue" title="Sky blue"></button>
-        <button class="qsw" data-color="#1E63C7" style="--c:#1E63C7" aria-pressed="false" aria-label="Blue" title="Blue"></button>
-        <button class="qsw" data-color="#26A69A" style="--c:#26A69A" aria-pressed="false" aria-label="Teal" title="Teal"></button>
-        <button class="qsw" data-color="#43A047" style="--c:#43A047" aria-pressed="false" aria-label="Green" title="Green"></button>
-        <button class="qsw" data-color="#8D5A3B" style="--c:#8D5A3B" aria-pressed="false" aria-label="Brown" title="Brown"></button>
-        <button class="qsw" data-color="#9E9E9E" style="--c:#9E9E9E" aria-pressed="false" aria-label="Gray" title="Gray"></button>
-        <button class="qsw" data-color="#9C2B2B" style="--c:#9C2B2B" aria-pressed="false" aria-label="Dark red" title="Dark red"></button>
-        <button class="qsw" data-color="#1B5E20" style="--c:#1B5E20" aria-pressed="false" aria-label="Dark green" title="Dark green"></button>
-        <button class="qsw" data-color="#1A3C8C" style="--c:#1A3C8C" aria-pressed="false" aria-label="Navy" title="Navy"></button>
-        <button class="qsw" data-color="#5E35B1" style="--c:#5E35B1" aria-pressed="false" aria-label="Dark purple" title="Dark purple"></button>
-        <button class="qsw" data-color="#4E342E" style="--c:#4E342E" aria-pressed="false" aria-label="Dark brown" title="Dark brown"></button>
-        <button class="qsw" data-color="#2B2B2B" style="--c:#2B2B2B" aria-pressed="false" aria-label="Black" title="Black"></button>
+        <button class="qsw" data-color="#ffffff" style="--c:#ffffff" aria-pressed="false" aria-label="White" title="White"></button>
+        <button class="qsw" data-color="#faf3c0" style="--c:#faf3c0" aria-pressed="false" aria-label="Cream" title="Cream"></button>
+        <button class="qsw" data-color="#fdd0a2" style="--c:#fdd0a2" aria-pressed="false" aria-label="Peach" title="Peach"></button>
+        <button class="qsw" data-color="#f9c4d8" style="--c:#f9c4d8" aria-pressed="false" aria-label="Light pink" title="Light pink"></button>
+        <button class="qsw" data-color="#b3e0f7" style="--c:#b3e0f7" aria-pressed="false" aria-label="Light blue" title="Light blue"></button>
+        <button class="qsw" data-color="#d9caf5" style="--c:#d9caf5" aria-pressed="false" aria-label="Lavender" title="Lavender"></button>
+        <button class="qsw" data-color="#bfe8cd" style="--c:#bfe8cd" aria-pressed="false" aria-label="Mint" title="Mint"></button>
+        <button class="qsw" data-color="#ffd84d" style="--c:#ffd84d" aria-pressed="false" aria-label="Yellow" title="Yellow"></button>
+        <button class="qsw" data-color="#ff8c42" style="--c:#ff8c42" aria-pressed="false" aria-label="Orange" title="Orange"></button>
+        <button class="qsw" data-color="#ef4444" style="--c:#ef4444" aria-pressed="false" aria-label="Red" title="Red"></button>
+        <button class="qsw" data-color="#ec4899" style="--c:#ec4899" aria-pressed="false" aria-label="Hot pink" title="Hot pink"></button>
+        <button class="qsw" data-color="#a855f7" style="--c:#a855f7" aria-pressed="false" aria-label="Purple" title="Purple"></button>
+        <button class="qsw" data-color="#4cc3ff" style="--c:#4cc3ff" aria-pressed="false" aria-label="Sky" title="Sky"></button>
+        <button class="qsw" data-color="#2563eb" style="--c:#2563eb" aria-pressed="false" aria-label="Blue" title="Blue"></button>
+        <button class="qsw" data-color="#14b8a6" style="--c:#14b8a6" aria-pressed="false" aria-label="Teal" title="Teal"></button>
+        <button class="qsw" data-color="#22a94f" style="--c:#22a94f" aria-pressed="false" aria-label="Green" title="Green"></button>
+        <button class="qsw" data-color="#92583a" style="--c:#92583a" aria-pressed="false" aria-label="Brown" title="Brown"></button>
+        <button class="qsw" data-color="#a3a3a3" style="--c:#a3a3a3" aria-pressed="false" aria-label="Gray" title="Gray"></button>
+        <button class="qsw" data-color="#991b1b" style="--c:#991b1b" aria-pressed="false" aria-label="Dark red" title="Dark red"></button>
+        <button class="qsw" data-color="#14532d" style="--c:#14532d" aria-pressed="false" aria-label="Dark green" title="Dark green"></button>
+        <button class="qsw" data-color="#1e3a8a" style="--c:#1e3a8a" aria-pressed="false" aria-label="Navy" title="Navy"></button>
+        <button class="qsw" data-color="#6d28d9" style="--c:#6d28d9" aria-pressed="false" aria-label="Violet" title="Violet"></button>
+        <button class="qsw" data-color="#44403c" style="--c:#44403c" aria-pressed="false" aria-label="Charcoal" title="Charcoal"></button>
+        <button class="qsw" data-color="#1c1917" style="--c:#1c1917" aria-pressed="false" aria-label="Black" title="Black"></button>
       </div>
+
+      <h3 class="sec">Size</h3>
       <div class="rail-size">
-        <span class="lbl">Size</span>
         <input type="range" id="size" min="2" max="40" value="10" step="1" aria-label="Brush size">
         <span id="preview"><span id="previewDot"></span></span>
       </div>
-      <div class="rail-history" role="group" aria-label="History">
-        <button class="ibtn" id="undoBtn" title="Undo" aria-label="Undo">↩️</button>
-        <button class="ibtn" id="redoBtn" title="Redo" aria-label="Redo">↪️</button>
-        <button class="ibtn" id="clearBtn" title="Clear canvas" aria-label="Clear canvas">🗑️</button>
-      </div>
-      <div class="rail-setting">
-        <button class="lh-toggle" id="leftHandBtn" role="switch" aria-checked="false" title="Left-handed mode">
-          <span class="lh-ico" aria-hidden="true">🤚</span><span class="lh-txt">Left-handed</span>
+
+      <h3 class="sec">Page</h3>
+      <div class="rail-page">
+        <button class="ubtn" id="clearBtn" title="Clear canvas" aria-label="Clear canvas">
+          <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M21 10V8.5c0-1.1.9-2 2-2h2c1.1 0 2 .9 2 2V10" fill="none" stroke="#2d2d2d" stroke-width="2.5" stroke-linecap="round"/><rect x="14.5" y="10" width="19" height="4.5" rx="2.2" fill="#fce4f3" stroke="#2d2d2d" stroke-width="2.5" stroke-linejoin="round"/><path d="M17 14.5l1.6 22.4c.1 1.6 1.4 2.8 3 2.8h4.8c1.6 0 2.9-1.2 3-2.8L31 14.5z" fill="#d4c4f0" stroke="#2d2d2d" stroke-width="2.5" stroke-linejoin="round"/><path d="M21.6 20l.6 12.5M26.4 20l-.6 12.5" fill="none" stroke="#2d2d2d" stroke-width="2" stroke-linecap="round"/></svg>
+          <span>Clear page</span>
+        </button>
+        <button class="ubtn" id="leftHandBtn" role="switch" aria-checked="false" title="Left-handed mode">
+          <span class="em" aria-hidden="true">🤚</span>
+          <span>Left-handed</span>
         </button>
       </div>
     </aside>
@@ -139,6 +173,6 @@ setTimeout(function () {
 <div id="toast" hidden></div>
 
 <script src="pals.js?v=2"></script>
-<script src="app.js?v=17"></script>
+<script src="app.js?v=18"></script>
 </body>
 </html>
