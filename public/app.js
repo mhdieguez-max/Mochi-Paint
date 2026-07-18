@@ -45,6 +45,134 @@
     }).observe(board);
   }
 
+  // ---------- fit-to-screen workspace + zoom / pan ----------
+  // The white page card (#canvasWrap) is sized to the coloring page's
+  // contain-fit inside the visible workspace, so the artwork fills the screen
+  // with no tall blank canvas. Zoom/pan apply a CSS transform to the card;
+  // pointer coordinates stay accurate because pos() reads the transformed
+  // getBoundingClientRect(). Manual zoom survives viewport changes; only the
+  // fit button (or a new page) resets it.
+  var workspace = document.getElementById("workspace");
+  var wrapEl = document.getElementById("canvasWrap");
+  var zoomF = 1, panX = 0, panY = 0, ZMIN = 0.5, ZMAX = 4;
+  var zoomInBtn = document.getElementById("zoomInBtn");
+  var zoomOutBtn = document.getElementById("zoomOutBtn");
+  var zoomFitBtn = document.getElementById("zoomFitBtn");
+
+  function applyView() {
+    wrapEl.style.transform = "translate(" + panX + "px," + panY + "px) scale(" + zoomF + ")";
+    if (zoomInBtn) zoomInBtn.disabled = zoomF >= ZMAX - 0.001;
+    if (zoomOutBtn) zoomOutBtn.disabled = zoomF <= ZMIN + 0.001;
+  }
+  function clampPan() {
+    var r = workspace.getBoundingClientRect();
+    var bw = wrapEl.clientWidth * zoomF, bh = wrapEl.clientHeight * zoomF;
+    var mx = Math.max(0, (bw - r.width) / 2) + 48;
+    var my = Math.max(0, (bh - r.height) / 2) + 48;
+    panX = Math.max(-mx, Math.min(mx, panX));
+    panY = Math.max(-my, Math.min(my, panY));
+  }
+  // Zoom keeping the content point under (cx,cy) fixed (pointer/pinch midpoint).
+  function setZoom(nz, cx, cy) {
+    nz = Math.max(ZMIN, Math.min(ZMAX, nz));
+    var r = workspace.getBoundingClientRect();
+    var CX = r.left + r.width / 2, CY = r.top + r.height / 2;
+    if (cx == null) { cx = CX; cy = CY; }
+    var qx = (cx - CX - panX) / zoomF, qy = (cy - CY - panY) / zoomF;
+    zoomF = nz;
+    panX = cx - CX - qx * zoomF;
+    panY = cy - CY - qy * zoomF;
+    clampPan();
+    applyView();
+  }
+  function resetView() { zoomF = 1; panX = 0; panY = 0; applyView(); }
+
+  // contain-fit the page card inside the visible workspace
+  function fitLayout() {
+    if (!workspace) return;
+    var aw = workspace.clientWidth, ah = workspace.clientHeight;
+    if (aw < 50 || ah < 50) return;
+    var w = aw, h = ah;
+    if (pageImg) {
+      var s = Math.min(aw / pageImg.width, ah / pageImg.height);
+      w = Math.max(50, Math.round(pageImg.width * s));
+      h = Math.max(50, Math.round(pageImg.height * s));
+    }
+    wrapEl.style.width = w + "px";
+    wrapEl.style.height = h + "px";
+  }
+  // Refit when the viewport, rotation, or mobile browser chrome changes the
+  // visible area (Visual Viewport API when available, with fallbacks).
+  var fitT = null;
+  function queueFit() { clearTimeout(fitT); fitT = setTimeout(fitLayout, 120); }
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", queueFit);
+  window.addEventListener("orientationchange", queueFit);
+  window.addEventListener("resize", queueFit);
+  if (window.ResizeObserver) new ResizeObserver(queueFit).observe(workspace);
+  // catch resizes/rotations that happened while the tab was hidden
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) queueFit(); });
+
+  if (zoomInBtn) zoomInBtn.addEventListener("click", function () { setZoom(zoomF * 1.25); });
+  if (zoomOutBtn) zoomOutBtn.addEventListener("click", function () { setZoom(zoomF / 1.25); });
+  if (zoomFitBtn) zoomFitBtn.addEventListener("click", function () { fitLayout(); resetView(); });
+
+  // Desktop: ctrl/cmd+wheel (and trackpad pinch) zooms at the pointer;
+  // plain wheel pans while zoomed in.
+  workspace.addEventListener("wheel", function (e) {
+    e.preventDefault();
+    if (e.ctrlKey || e.metaKey) {
+      setZoom(zoomF * Math.pow(1.0015, -e.deltaY), e.clientX, e.clientY);
+    } else if (zoomF > 1.001) {
+      panX -= e.deltaX; panY -= e.deltaY;
+      clampPan(); applyView();
+    }
+  }, { passive: false });
+
+  // Touch: two fingers pinch-zoom/pan the page; a stroke in progress when the
+  // second finger lands is reverted, and drawing stays off until all fingers
+  // lift so a pinch never leaves paint behind.
+  var touchPts = new Map(), pinch = null, gestureLock = false;
+  function touchMid() {
+    var xs = 0, ys = 0, n = 0;
+    touchPts.forEach(function (p) { xs += p[0]; ys += p[1]; n++; });
+    return [xs / n, ys / n];
+  }
+  function touchDist() {
+    var pts = [];
+    touchPts.forEach(function (p) { pts.push(p); });
+    return Math.hypot(pts[0][0] - pts[1][0], pts[0][1] - pts[1][1]);
+  }
+  workspace.addEventListener("pointerdown", function (e) {
+    if (e.pointerType !== "touch") return;
+    touchPts.set(e.pointerId, [e.clientX, e.clientY]);
+    if (touchPts.size === 2) {
+      cancelActiveStroke();
+      gestureLock = true;
+      pinch = { d: touchDist(), mid: touchMid() };
+      try { workspace.setPointerCapture(e.pointerId); } catch (err) { }
+    }
+  }, true);
+  workspace.addEventListener("pointermove", function (e) {
+    if (e.pointerType !== "touch" || !touchPts.has(e.pointerId)) return;
+    touchPts.set(e.pointerId, [e.clientX, e.clientY]);
+    if (pinch && touchPts.size >= 2) {
+      var d = touchDist(), mid = touchMid();
+      if (pinch.d > 0) setZoom(zoomF * (d / pinch.d), mid[0], mid[1]);
+      panX += mid[0] - pinch.mid[0];
+      panY += mid[1] - pinch.mid[1];
+      clampPan(); applyView();
+      pinch.d = d; pinch.mid = mid;
+    }
+  }, true);
+  function touchEnd(e) {
+    if (e.pointerType !== "touch") return;
+    touchPts.delete(e.pointerId);
+    if (pinch && touchPts.size < 2) pinch = null;
+    if (touchPts.size === 0) gestureLock = false;
+  }
+  workspace.addEventListener("pointerup", touchEnd, true);
+  workspace.addEventListener("pointercancel", touchEnd, true);
+
   // ---------- state ----------
   var tool = "pencil", size = 10, color = "#ec4899", shade = "#ec4899";
   var lastDrawTool = "pencil";
@@ -615,7 +743,10 @@
     }); });
   }
 
+  // Never start a stroke while a two-finger zoom/pan gesture is active (the
+  // workspace's capture-phase pinch handlers run before this one).
   board.addEventListener("pointerdown", function (e) {
+    if (e.pointerType === "touch" && (gestureLock || pinch)) return;
     if (!ready) { initCanvas(); if (!ready) return; }
     e.preventDefault();
     try { board.setPointerCapture(e.pointerId); } catch (err) { }
@@ -644,26 +775,30 @@
     else if (tool === "marker") markerPath();
     else paintThrough(function (g) { seg(last, p, g); });
   });
+  // Revert a stroke in progress (second finger landed, or the pointer was
+  // cancelled) so a pinch never leaves a stray dot or line behind.
+  function cancelActiveStroke() {
+    if (!drawing) return;
+    var pre = undoStack.pop();
+    if (pre) ctx.putImageData(pre, 0, 0);
+    updateHistoryButtons();
+    drawing = false; pts = []; snap = null;
+  }
   function endStroke(e) {
-    // A cancelled pointer means the browser took the gesture over (usually a
-    // two-finger pinch-zoom starting on the canvas) — revert the accidental
-    // mark so pinching never leaves a stray dot or line behind.
-    if (drawing && e && e.type === "pointercancel") {
-      var pre = undoStack.pop();
-      if (pre) ctx.putImageData(pre, 0, 0);
-      updateHistoryButtons();
-    }
+    if (drawing && e && e.type === "pointercancel") { cancelActiveStroke(); scheduleSave(); return; }
     drawing = false; pts = []; snap = null; scheduleSave();
   }
   board.addEventListener("pointerup", endStroke);
   board.addEventListener("pointercancel", endStroke);
 
-  // brush-size ring that follows the cursor
+  // brush-size ring that follows the cursor (lives in the untransformed
+  // workspace, so its diameter is multiplied by the current zoom)
   var ring = document.getElementById("cursorRing"), wrap = document.getElementById("canvasWrap");
   function updateRing(e) {
     if (tool === "fill" || e.pointerType === "touch") { ring.style.display = "none"; return; }
-    var r = wrap.getBoundingClientRect();
+    var r = workspace.getBoundingClientRect();
     var d = tool === "eraser" ? size * 2.6 : tool === "marker" ? size * 2 : tool === "spray" ? size * 3.6 : Math.max(2, size * 0.7);
+    d *= zoomF;
     ring.style.display = "block";
     ring.style.width = d + "px";
     ring.style.height = d + "px";
@@ -704,6 +839,7 @@
     if (startBlank) {
       pageFn = null; pageImg = null; pageName = "";
       currentSlug = "blank";
+      fitLayout(); resetView();
       drawPage();
       restoreProgress();
       setHint("Blank page — free drawing time!");
@@ -721,6 +857,7 @@
       img.onload = function () {
         forestImgCache[pal.slug] = img;
         pageImg = img; pageFn = null;
+        fitLayout(); resetView();
         drawPage();
         restoreProgress();
         setHint(pageName + " is ready to color! Grab the paint can to fill areas, or shade with the brushes.");
@@ -736,6 +873,7 @@
     pageFn = STAMPS[startIdx][2];
     pageName = STAMPS[startIdx][0] + " the " + STAMPS[startIdx][1];
     currentSlug = STAMPS[startIdx][0].toLowerCase();
+    fitLayout(); resetView();
     drawPage();
     restoreProgress();
     setHint(pageName + " is ready to color! Grab the paint can to fill areas, or shade with the brushes.");
