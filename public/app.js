@@ -249,7 +249,13 @@
     { slug: "dream", name: "Dream", species: "donut", src: "coloring-pages/sweets/dream-donut.png", thumb: "coloring-pages/sweets/previews/dream-donut-color.png" },
     { slug: "crumby", name: "Crumby", species: "cookie", src: "coloring-pages/sweets/crumby-cookie.png", thumb: "coloring-pages/sweets/previews/crumby-cookie-color.png" }
   ];
-  var IMAGE_PALS = MEADOW_PALS.concat(FOREST_PALS, BARNYARD_PALS, SNOW_PALS, DEN_PALS, DINOSAUR_PALS, MERMAID_PALS, HALLOWEEN_PALS, CHRISTMAS_PALS, SWEETS_PALS);
+  var NORTHPOLE_PALS = [
+    { slug: "snower", name: "Snower", species: "snowman", src: "coloring-pages/northpole/snower-snowman.png", thumb: "coloring-pages/northpole/previews/snower-snowman-color.png" },
+    { slug: "sparkle", name: "Sparkle", species: "reindeer", src: "coloring-pages/northpole/sparkle-reindeer.png", thumb: "coloring-pages/northpole/previews/sparkle-reindeer-color.png" },
+    { slug: "mistle", name: "Mistle", species: "elf", src: "coloring-pages/northpole/mistle-elf.png", thumb: "coloring-pages/northpole/previews/mistle-elf-color.png" },
+    { slug: "popper", name: "Popper", species: "peppermint duo", src: "coloring-pages/northpole/popper-peppermint-duo.png", thumb: "coloring-pages/northpole/previews/popper-peppermint-duo-color.png" }
+  ];
+  var IMAGE_PALS = MEADOW_PALS.concat(FOREST_PALS, BARNYARD_PALS, SNOW_PALS, DEN_PALS, DINOSAUR_PALS, MERMAID_PALS, HALLOWEEN_PALS, CHRISTMAS_PALS, SWEETS_PALS, NORTHPOLE_PALS);
   var undoStack = [], redoStack = [], drawing = false, pts = [], snap = null;
 
   var hint = document.getElementById("hint");

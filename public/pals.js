@@ -647,7 +647,8 @@ window.MochiPals = (function () {
     { slug: "mermaids", icon: "🧜‍♀️", title: "Mermaid Cove", accent: "#48AFC0", bg: "linear-gradient(160deg,#DDF7F7,#F5FDFF)", tagline: "Sea-sparkle pages with shells, waves, tails, and friendly ocean pals." },
     { slug: "halloween", icon: "🎃", title: "Halloween Pals", accent: "#D37A35", bg: "linear-gradient(160deg,#FFF1DE,#F6EEFF)", tagline: "Pumpkins, costumes, moonlight, and sweet little spooky pages." },
     { slug: "christmas", icon: "🎄", title: "Christmas Pals", accent: "#C94F5D", bg: "linear-gradient(160deg,#EAF8EF,#FFF7F7)", tagline: "Holiday pages for red noses, snow days, ornaments, and warm cocoa colors." },
-    { slug: "sweets", icon: "🧁", title: "Sweet Palette", accent: "#D0679E", bg: "linear-gradient(160deg,#FDE9F2,#FFF7EC)", tagline: "Frosting, sprinkles, and sugary smiles — dessert friends fresh from the dream bakery." }
+    { slug: "sweets", icon: "🧁", title: "Sweet Palette", accent: "#D0679E", bg: "linear-gradient(160deg,#FDE9F2,#FFF7EC)", tagline: "Frosting, sprinkles, and sugary smiles — dessert friends fresh from the dream bakery." },
+    { slug: "northpole", icon: "🎅", title: "North Pole Pals", accent: "#4CA98F", bg: "linear-gradient(160deg,#E6F7F1,#FFF6F6)", tagline: "Snowmen, elves, reindeer, and candy-cane cheer straight from Santa's workshop." }
   ];
 
   var PALS = [
@@ -688,7 +689,11 @@ window.MochiPals = (function () {
     { slug: "icy", name: "Icy", species: "snow cone", group: "sweets", draw: null },
     { slug: "star", name: "Star", species: "unicorn cupcake", group: "sweets", draw: null },
     { slug: "dream", name: "Dream", species: "donut", group: "sweets", draw: null },
-    { slug: "crumby", name: "Crumby", species: "cookie", group: "sweets", draw: null }
+    { slug: "crumby", name: "Crumby", species: "cookie", group: "sweets", draw: null },
+    { slug: "snower", name: "Snower", species: "snowman", group: "northpole", draw: null },
+    { slug: "sparkle", name: "Sparkle", species: "reindeer", group: "northpole", draw: null },
+    { slug: "mistle", name: "Mistle", species: "elf", group: "northpole", draw: null },
+    { slug: "popper", name: "Popper", species: "peppermint duo", group: "northpole", draw: null }
   ];
 
   function bySlug(slug) {
