@@ -101,12 +101,19 @@ body{margin:0;font-family:'Poppins',system-ui,sans-serif;color:#666;
   border-color:#f4a4d4;color:#d4548d}
 
 /* ---------- colors ---------- */
-.cc-btn{width:28px;height:28px;border-radius:50%;border:2px solid #e8e8e8;background:#fff;
-  display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;
-  transition:border-color .2s ease}
-.cc-btn:hover{border-color:#f4a4d4}
-.cc-dot{width:16px;height:16px;border-radius:50%;background:#ec4899}
-.rail-colors{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;justify-items:center}
+/* One big color button; tapping it pops the full palette over the canvas
+   with a springy expand, so the rail never crams 24 swatches. */
+.cc-big{width:56px;height:56px;border-radius:50%;border:3px solid #e8e8e8;background:#fff;margin:2px auto 4px;
+  display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;flex:0 0 auto;
+  transition:border-color .2s ease,transform .15s ease}
+.cc-big:hover{border-color:#f4a4d4;transform:scale(1.06)}
+.cc-dot{width:40px;height:40px;border-radius:50%;background:#ec4899;pointer-events:none}
+.color-pop{display:none;position:fixed;z-index:60;left:50%;top:44%;transform:translate(-50%,-50%);
+  background:#fff;border:2px solid #dbe4f6;border-radius:22px;padding:16px;
+  box-shadow:0 18px 50px rgba(120,100,160,.32)}
+.color-pop.open{display:block;animation:popIn .22s cubic-bezier(.34,1.56,.64,1)}
+@keyframes popIn{from{opacity:0;transform:translate(-50%,-46%) scale(.7)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+.rail-colors{display:grid;grid-template-columns:repeat(6,46px);gap:10px;justify-items:center}
 .qsw{width:40px;aspect-ratio:1;border-radius:50%;background:var(--c);padding:0;cursor:pointer;
   border:2px solid rgba(45,45,45,.25);
   border-color:color-mix(in srgb,var(--c) 72%,#2d2d2d);
@@ -141,7 +148,7 @@ body{margin:0;font-family:'Poppins',system-ui,sans-serif;color:#666;
   border-color:#f4a4d4;color:#d4548d}
 
 /* visible keyboard focus across every control */
-.tbtn:focus-visible,.abtn:focus-visible,.cc-btn:focus-visible,
+.tbtn:focus-visible,.abtn:focus-visible,.cc-big:focus-visible,
 .qsw:focus-visible,.ubtn:focus-visible,
 #size:focus-visible{outline:3px solid #a8d5ff;outline-offset:2px}
 @media(prefers-reduced-motion:reduce){
@@ -198,8 +205,10 @@ body{margin:0;font-family:'Poppins',system-ui,sans-serif;color:#666;
   .rail-tools,.rail-page{flex-direction:row;gap:8px;flex:0 0 auto}
   .tbtn,.ubtn{width:auto;justify-content:center;gap:0;padding:8px;flex:0 0 auto}
   .tbtn span,.ubtn span{display:none}
-  .rail-colors{display:flex;flex-direction:row;gap:8px;flex:0 0 auto}
-  .qsw{width:36px;flex:0 0 auto}
+  .cc-big{width:46px;height:46px;margin:0}
+  .cc-big .cc-dot{width:32px;height:32px}
+  .color-pop{top:40%;padding:12px}
+  .rail-colors{grid-template-columns:repeat(4,44px);gap:9px}
   .rail-size{flex:0 0 auto;width:150px;gap:8px;padding:0 2px}
   .zoomctl{right:8px;bottom:8px}
 }
@@ -224,12 +233,16 @@ body{margin:0;font-family:'Poppins',system-ui,sans-serif;color:#666;
   #app.left-handed .rail{margin:0 8px 0 0}
   .sec{display:flex;justify-content:center;font-size:10px;margin:10px 0 6px}
   .sec:first-child{margin-top:0}
-  .sec .cc-btn{display:none}
+
   .rail-tools,.rail-page{flex-direction:column;gap:8px}
   .tbtn,.ubtn{width:100%;justify-content:center;gap:0;padding:8px 4px}
   .tbtn span,.ubtn span{display:none}
-  .rail-colors{display:grid;grid-template-columns:1fr;gap:8px}
-  .qsw{width:40px}
+  .cc-big{width:44px;height:44px;margin:0 auto}
+  .cc-big .cc-dot{width:30px;height:30px}
   .rail-size{flex-direction:column;gap:8px;width:auto}
   #size{width:100%}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .color-pop.open{animation:none}
 }
