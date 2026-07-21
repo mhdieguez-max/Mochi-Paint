@@ -114,7 +114,7 @@
         </div>
       </div>
       <h1>Grab a color, meet a pal, make something cute</h1>
-      <p class="sub">Thirty-eight chunky little friends are waiting below, sorted into cozy little worlds. Pick one, follow the trail, and start coloring.</p>
+      <p class="sub"><span id="palCount">Thirty-eight</span> chunky little friends are waiting below, sorted into cozy little worlds. Pick one, follow the trail, and start coloring.</p>
       <a class="cta" href="/?pal=panpan">Start coloring Panpan →</a>
     </header>
 
@@ -190,7 +190,11 @@
         rudy: "/coloring-pages/christmas/previews/rudy-reindeer-color.png",
         flurry: "/coloring-pages/christmas/previews/flurry-snowman-color.png",
         piney: "/coloring-pages/christmas/previews/piney-christmas-tree-color.png",
-        noel: "/coloring-pages/christmas/previews/noel-santa-bear-color.png"
+        noel: "/coloring-pages/christmas/previews/noel-santa-bear-color.png",
+        icy: "/coloring-pages/sweets/previews/icy-snow-cone-color.png",
+        star: "/coloring-pages/sweets/previews/star-cupcake-color.png",
+        dream: "/coloring-pages/sweets/previews/dream-donut-color.png",
+        crumby: "/coloring-pages/sweets/previews/crumby-cookie-color.png"
       };
       P.PALS.filter((pal) => pal.group === group.slug).forEach((pal) => {
         const card = document.createElement("a");
@@ -248,6 +252,16 @@
       forestGrid.appendChild(card);
     });
     main.appendChild(forestSection);
+
+    // The friend count writes itself from the rendered cards so new pal
+    // groups in pals.js never leave stale copy here.
+    const countWord = (n) => {
+      const ones = ["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen"];
+      const tens = ["","","twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety"];
+      const w = n < 20 ? ones[n] : tens[Math.floor(n / 10)] + (n % 10 ? "-" + ones[n % 10] : "");
+      return w.charAt(0).toUpperCase() + w.slice(1);
+    };
+    document.getElementById("palCount").textContent = countWord(document.querySelectorAll(".card").length);
 
     function paintAll() {
       const dpr = Math.min(window.devicePixelRatio || 1, 3);
