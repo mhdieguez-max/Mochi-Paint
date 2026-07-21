@@ -132,7 +132,10 @@ button,a,input,.logo{touch-action:manipulation}
 
 /* ---------- size slider ---------- */
 .rail-size{display:flex;align-items:center;gap:12px;padding:2px 2px 4px}
-#size{flex:1;height:6px;border-radius:8px;background:linear-gradient(to right,#f4a4d4,#d4c4f0);
+/* min-width:0 lets the slider actually flex-shrink — its native minimum is
+   ~129px, which overflowed the phone tray's size box and shoved the preview
+   dot underneath the trash button */
+#size{flex:1;min-width:0;height:6px;border-radius:8px;background:linear-gradient(to right,#f4a4d4,#d4c4f0);
   -webkit-appearance:none;appearance:none;outline-offset:4px;cursor:pointer;margin:0;
   font-size:16px} /* ≥16px so focusing it never triggers iOS auto-zoom */
 #size::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;
@@ -219,7 +222,7 @@ button,a,input,.logo{touch-action:manipulation}
   /* finger-sized swatches on phones */
   .rail-colors{grid-template-columns:repeat(4,48px);gap:8px}
   .qsw{width:44px}
-  .rail-size{flex:0 0 auto;width:150px;gap:8px;padding:0 2px}
+  .rail-size{flex:0 0 auto;width:184px;gap:8px;padding:0 2px}
   .zoomctl{right:8px;bottom:8px}
 }
 
