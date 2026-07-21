@@ -33,7 +33,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=14">
+<link rel="stylesheet" href="style.css?v=15">
 </head>
 <body>
 
@@ -131,10 +131,10 @@ setTimeout(function () {
         </button>
       </div>
 
-      <h3 class="sec">Colors
-        <button class="cc-btn" id="currentColor" aria-label="Current color" title="Current color"><span class="cc-dot" id="ccDot"></span></button>
-      </h3>
-      <div class="rail-colors" id="quickColors" role="group" aria-label="Colors">
+      <h3 class="sec">Color</h3>
+      <button class="cc-big" id="currentColor" aria-haspopup="true" aria-expanded="false" aria-label="Pick a color" title="Pick a color"><span class="cc-dot" id="ccDot"></span></button>
+      <div class="color-pop" id="colorPop" role="dialog" aria-label="Color palette">
+        <div class="rail-colors" id="quickColors" role="group" aria-label="Colors">
         <button class="qsw" data-color="#ffffff" style="--c:#ffffff" aria-pressed="false" aria-label="White" title="White"></button>
         <button class="qsw" data-color="#faf3c0" style="--c:#faf3c0" aria-pressed="false" aria-label="Cream" title="Cream"></button>
         <button class="qsw" data-color="#fdd0a2" style="--c:#fdd0a2" aria-pressed="false" aria-label="Peach" title="Peach"></button>
@@ -159,6 +159,7 @@ setTimeout(function () {
         <button class="qsw" data-color="#6d28d9" style="--c:#6d28d9" aria-pressed="false" aria-label="Violet" title="Violet"></button>
         <button class="qsw" data-color="#44403c" style="--c:#44403c" aria-pressed="false" aria-label="Charcoal" title="Charcoal"></button>
         <button class="qsw" data-color="#1c1917" style="--c:#1c1917" aria-pressed="false" aria-label="Black" title="Black"></button>
+        </div>
       </div>
 
       <h3 class="sec">Size</h3>
@@ -186,6 +187,6 @@ setTimeout(function () {
 <div id="toast" hidden></div>
 
 <script src="pals.js?v=4"></script>
-<script src="app.js?v=21"></script>
+<script src="app.js?v=22"></script>
 </body>
 </html>

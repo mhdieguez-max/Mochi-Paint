@@ -3,7 +3,7 @@
 // offline (a Play Store requirement — never show a browser error page).
 // Runtime strategy stays network-first: fresh files whenever online, cached
 // copy when the network is gone.
-var CACHE = "mochi-paint-v13";
+var CACHE = "mochi-paint-v14";
 var CORE = [
   "/",
   "/home",

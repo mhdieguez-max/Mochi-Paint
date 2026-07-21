@@ -287,10 +287,22 @@
   function syncCurrentColor() {
     if (ccDot) ccDot.style.background = shade;
   }
-  // tapping the current-colour swatch scrolls the palette into view
+  // tapping the big color button pops the palette open over the canvas
+  var colorPop = document.getElementById("colorPop");
+  function openColorPop(open) {
+    if (!colorPop) return;
+    colorPop.classList.toggle("open", open);
+    if (ccBtn) ccBtn.setAttribute("aria-expanded", open ? "true" : "false");
+  }
   if (ccBtn) ccBtn.addEventListener("click", function () {
-    if (quickWrap && quickWrap.scrollIntoView) quickWrap.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    openColorPop(!(colorPop && colorPop.classList.contains("open")));
   });
+  document.addEventListener("pointerdown", function (e) {
+    if (!colorPop || !colorPop.classList.contains("open")) return;
+    if (colorPop.contains(e.target) || (ccBtn && ccBtn.contains(e.target))) return;
+    openColorPop(false);
+  });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") openColorPop(false); });
   function updatePreview() {
     var d = Math.min(size, 30);
     previewDot.style.width = d + "px";
@@ -314,7 +326,7 @@
     updatePreview();   // syncs the current-colour swatch + size preview
   }
   quickBtns.forEach(function (b) {
-    b.addEventListener("click", function () { setColorHex(b.getAttribute("data-color")); });
+    b.addEventListener("click", function () { setColorHex(b.getAttribute("data-color")); openColorPop(false); });
   });
   setColorHex(color);
 

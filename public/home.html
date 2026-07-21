@@ -28,10 +28,19 @@
        unreliable on mobile Safari and breaks compositing in some browsers. */
     body:before{content:"";position:fixed;inset:0;z-index:-1;border-radius:0;filter:none;opacity:1;width:auto;height:auto;top:0;left:0;
       background:linear-gradient(180deg,#e6dcf7 0%,#f7dcea 45%,#fdeee2 100%);animation:none}
-    /* CSS cloud blobs */
-    .cloud{position:absolute;background:#fff;border-radius:99px;pointer-events:none}
-    .cloud.c1{top:70px;left:6%;width:150px;height:44px;opacity:.75;box-shadow:40px 14px 0 -6px #fff,-30px 16px 0 -10px #fff}
-    .cloud.c2{top:150px;right:8%;width:120px;height:36px;opacity:.65;box-shadow:34px 10px 0 -6px #fff}
+    /* Full puffy clouds with a soft lavender underside, always fully
+       on-screen (no clipped pill shapes). */
+    .cloud{position:absolute;pointer-events:none}
+    .cloud svg{display:block;width:100%;height:auto;filter:drop-shadow(0 6px 14px rgba(150,120,190,.14))}
+    /* Clouds appear only where the sky is open, so they always read as
+       full puffy shapes: the hero side gutters on wide screens, the top
+       corners beside the brand on phones. */
+    .cloud{display:none}
+    @media(min-width:1240px){
+      .cloud.c1{display:block;top:170px;left:2%;width:170px;opacity:.95}
+      .cloud.c2{display:block;top:250px;right:2%;width:140px;opacity:.9}
+      .cloud.c3{display:block;top:460px;left:3.5%;width:120px;opacity:.85}
+    }
     .sky-spark{position:absolute;pointer-events:none;animation:skyTwinkle 3s ease-in-out infinite}
     .sky-spark.k1{top:320px;left:12%;font-size:22px}
     .sky-spark.k2{top:260px;right:15%;font-size:18px;animation-duration:3.6s;animation-delay:.8s}
@@ -80,6 +89,13 @@
     @media(max-width:760px){
       .shell{padding:calc(14px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(36px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left))}
       .nav{padding-bottom:14px}
+      /* Chips become one swipeable row so the hero stays right under the
+         nav instead of a wall of stacked pills. */
+      .chips{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:none}
+      .chips::-webkit-scrollbar{display:none}
+      .chips a{flex:0 0 auto}
+      .cloud.c1{display:block;top:22px;left:2%;width:82px}
+      .cloud.c2{display:block;top:34px;right:2%;width:66px}
       .hero{padding-top:16px;gap:20px}
       .hero-card{border-radius:28px;padding:9px;border-width:4px}
       .hero-card img{border-radius:20px}
@@ -91,8 +107,9 @@
   </style>
 </head>
 <body>
-  <div class="cloud c1" aria-hidden="true"></div>
-  <div class="cloud c2" aria-hidden="true"></div>
+  <div class="cloud c1" aria-hidden="true"><svg viewBox="0 0 220 132" aria-hidden="true"><g fill="#ddcdf1"><circle cx="62" cy="90" r="34"/><circle cx="112" cy="80" r="42"/><circle cx="164" cy="92" r="30"/><ellipse cx="112" cy="102" rx="88" ry="24"/></g><g fill="#ffffff"><circle cx="62" cy="80" r="34"/><circle cx="112" cy="68" r="42"/><circle cx="164" cy="82" r="30"/><ellipse cx="112" cy="92" rx="88" ry="24"/></g></svg></div>
+  <div class="cloud c2" aria-hidden="true"><svg viewBox="0 0 220 132" aria-hidden="true"><g fill="#ddcdf1"><circle cx="62" cy="90" r="34"/><circle cx="112" cy="80" r="42"/><circle cx="164" cy="92" r="30"/><ellipse cx="112" cy="102" rx="88" ry="24"/></g><g fill="#ffffff"><circle cx="62" cy="80" r="34"/><circle cx="112" cy="68" r="42"/><circle cx="164" cy="82" r="30"/><ellipse cx="112" cy="92" rx="88" ry="24"/></g></svg></div>
+  <div class="cloud c3" aria-hidden="true"><svg viewBox="0 0 220 132" aria-hidden="true"><g fill="#ddcdf1"><circle cx="62" cy="90" r="34"/><circle cx="112" cy="80" r="42"/><circle cx="164" cy="92" r="30"/><ellipse cx="112" cy="102" rx="88" ry="24"/></g><g fill="#ffffff"><circle cx="62" cy="80" r="34"/><circle cx="112" cy="68" r="42"/><circle cx="164" cy="82" r="30"/><ellipse cx="112" cy="92" rx="88" ry="24"/></g></svg></div>
   <div class="sky-spark k1" aria-hidden="true">✨</div>
   <div class="sky-spark k2" aria-hidden="true">⭐</div>
   <div class="sky-spark k3" aria-hidden="true">✨</div>
@@ -238,7 +255,7 @@
     forestSection.innerHTML = `
       <div class="section-head">
         <h2>Rainforest Pals</h2>
-        <p class="tagline">Gentle jungle and woodland friends — tap one to color it right here, or grab the <a href="/forest-kawaii.html" style="color:inherit">printable versions</a>.</p>
+        <p class="tagline">Gentle jungle and woodland friends from the leafy riverside, ready for color.</p>
       </div>
       <div class="grid"></div>
     `;
