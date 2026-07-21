@@ -40,10 +40,8 @@
     @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
     .shell{position:relative;z-index:1;max-width:1240px;margin:0 auto;
       padding:calc(22px + env(safe-area-inset-top)) calc(22px + env(safe-area-inset-right)) calc(50px + env(safe-area-inset-bottom)) calc(22px + env(safe-area-inset-left))}
-    .nav{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 4px 18px}
+    .nav{display:flex;align-items:center;justify-content:center;padding:6px 4px 18px}
     .brand{display:flex;align-items:center;gap:8px;font-family:'Baloo 2',cursive;font-weight:800;font-size:24px;color:#5a4a72;white-space:nowrap}
-    .nav-pill{font-family:'Baloo 2',cursive;font-weight:700;font-size:16px;background:#ffffffb0;padding:10px 22px;border-radius:99px;color:#8a6fae;text-decoration:none;white-space:nowrap;
-      box-shadow:0 2px 0 #ffffff inset,0 4px 12px rgba(140,110,180,.15)}
     /* Theme chips — one per pal world, generated from pals.js so the row
        always matches the environments that actually exist in the app. */
     .chips{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;padding:0 4px 8px}
@@ -81,7 +79,7 @@
     .foot-links a{color:#a98fc9;text-decoration:underline}
     @media(max-width:760px){
       .shell{padding:calc(14px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(36px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left))}
-      .nav{flex-direction:column;gap:10px;padding-bottom:14px}
+      .nav{padding-bottom:14px}
       .hero{padding-top:16px;gap:20px}
       .hero-card{border-radius:28px;padding:9px;border-width:4px}
       .hero-card img{border-radius:20px}
@@ -102,13 +100,12 @@
   <div class="shell">
     <nav class="nav">
       <div class="brand"><span>🍡</span><span>Mochi Paint</span></div>
-      <a class="nav-pill" href="#forest-pals">Rainforest Pals</a>
     </nav>
     <div class="chips" id="chips"></div>
 
     <header class="hero">
       <div class="hero-card">
-        <img src="/hero-pals.png" alt="A chick, bear, panda, fox, and polar bear sitting together in a sunny kawaii field">
+        <img src="/hero-pals.png?v=2" alt="A chick, bear, panda holding a paint palette and brush, fox, and polar bear sitting together in a sunny kawaii field">
         <div class="hero-magic" aria-hidden="true">
           <span class="spark s1">✨</span>
           <span class="spark s2">✨</span>
