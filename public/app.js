@@ -243,7 +243,13 @@
     { slug: "piney", name: "Piney", species: "christmas tree", src: "coloring-pages/christmas/piney-christmas-tree.png", thumb: "coloring-pages/christmas/previews/piney-christmas-tree-color.png" },
     { slug: "noel", name: "Noel", species: "santa bear", src: "coloring-pages/christmas/noel-santa-bear.png", thumb: "coloring-pages/christmas/previews/noel-santa-bear-color.png" }
   ];
-  var IMAGE_PALS = MEADOW_PALS.concat(FOREST_PALS, BARNYARD_PALS, SNOW_PALS, DEN_PALS, DINOSAUR_PALS, MERMAID_PALS, HALLOWEEN_PALS, CHRISTMAS_PALS);
+  var SWEETS_PALS = [
+    { slug: "icy", name: "Icy", species: "snow cone", src: "coloring-pages/sweets/icy-snow-cone.png", thumb: "coloring-pages/sweets/previews/icy-snow-cone-color.png" },
+    { slug: "star", name: "Star", species: "unicorn cupcake", src: "coloring-pages/sweets/star-cupcake.png", thumb: "coloring-pages/sweets/previews/star-cupcake-color.png" },
+    { slug: "dream", name: "Dream", species: "donut", src: "coloring-pages/sweets/dream-donut.png", thumb: "coloring-pages/sweets/previews/dream-donut-color.png" },
+    { slug: "crumby", name: "Crumby", species: "cookie", src: "coloring-pages/sweets/crumby-cookie.png", thumb: "coloring-pages/sweets/previews/crumby-cookie-color.png" }
+  ];
+  var IMAGE_PALS = MEADOW_PALS.concat(FOREST_PALS, BARNYARD_PALS, SNOW_PALS, DEN_PALS, DINOSAUR_PALS, MERMAID_PALS, HALLOWEEN_PALS, CHRISTMAS_PALS, SWEETS_PALS);
   var undoStack = [], redoStack = [], drawing = false, pts = [], snap = null;
 
   var hint = document.getElementById("hint");

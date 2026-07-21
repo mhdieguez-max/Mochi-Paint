@@ -646,7 +646,8 @@ window.MochiPals = (function () {
     { slug: "dinosaurs", icon: "🦖", title: "Dinosaur Pals", accent: "#67A65F", bg: "linear-gradient(160deg,#E8F6DD,#FFFDF4)", tagline: "Big roars, tiny smiles, leafy spikes, and prehistoric coloring fun." },
     { slug: "mermaids", icon: "🧜‍♀️", title: "Mermaid Cove", accent: "#48AFC0", bg: "linear-gradient(160deg,#DDF7F7,#F5FDFF)", tagline: "Sea-sparkle pages with shells, waves, tails, and friendly ocean pals." },
     { slug: "halloween", icon: "🎃", title: "Halloween Pals", accent: "#D37A35", bg: "linear-gradient(160deg,#FFF1DE,#F6EEFF)", tagline: "Pumpkins, costumes, moonlight, and sweet little spooky pages." },
-    { slug: "christmas", icon: "🎄", title: "Christmas Pals", accent: "#C94F5D", bg: "linear-gradient(160deg,#EAF8EF,#FFF7F7)", tagline: "Holiday pages for red noses, snow days, ornaments, and warm cocoa colors." }
+    { slug: "christmas", icon: "🎄", title: "Christmas Pals", accent: "#C94F5D", bg: "linear-gradient(160deg,#EAF8EF,#FFF7F7)", tagline: "Holiday pages for red noses, snow days, ornaments, and warm cocoa colors." },
+    { slug: "sweets", icon: "🧁", title: "Sweet Palette", accent: "#D0679E", bg: "linear-gradient(160deg,#FDE9F2,#FFF7EC)", tagline: "Frosting, sprinkles, and sugary smiles — dessert friends fresh from the dream bakery." }
   ];
 
   var PALS = [
@@ -681,7 +682,13 @@ window.MochiPals = (function () {
     { slug: "rudy", name: "Rudy", species: "reindeer", group: "christmas", draw: stReindeer },
     { slug: "flurry", name: "Flurry", species: "snowman", group: "christmas", draw: stSnowman },
     { slug: "piney", name: "Piney", species: "christmas tree", group: "christmas", draw: stTree },
-    { slug: "noel", name: "Noel", species: "santa bear", group: "christmas", draw: stSantaBear }
+    { slug: "noel", name: "Noel", species: "santa bear", group: "christmas", draw: stSantaBear },
+    // Sweet Palette pals are image-only (PR #30 assets) — no procedural draw
+    // functions; their cards and pages come from coloring-pages/sweets/ PNGs.
+    { slug: "icy", name: "Icy", species: "snow cone", group: "sweets", draw: null },
+    { slug: "star", name: "Star", species: "unicorn cupcake", group: "sweets", draw: null },
+    { slug: "dream", name: "Dream", species: "donut", group: "sweets", draw: null },
+    { slug: "crumby", name: "Crumby", species: "cookie", group: "sweets", draw: null }
   ];
 
   function bySlug(slug) {
