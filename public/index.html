@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<!-- Studio only: browser zoom is locked because the workspace has its own
+     zoom (buttons + pinch). Content pages (home/privacy/…) stay scalable. -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <title>Mochi Paint — kawaii coloring studio</title>
 <meta name="description" content="A cozy kawaii coloring app: open a chunky pastel pal as a coloring page, fill inside the lines, and shade with soft brushes.">
 <meta name="theme-color" content="#f5e6f0">
@@ -33,7 +35,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=15">
+<link rel="stylesheet" href="style.css?v=16">
 </head>
 <body>
 
@@ -132,9 +134,35 @@ setTimeout(function () {
       </div>
 
       <h3 class="sec">Color</h3>
-      <button class="cc-big" id="currentColor" aria-haspopup="true" aria-expanded="false" aria-label="Pick a color" title="Pick a color"><span class="cc-dot" id="ccDot"></span></button>
-      <div class="color-pop" id="colorPop" role="dialog" aria-label="Color palette">
-        <div class="rail-colors" id="quickColors" role="group" aria-label="Colors">
+      <button class="cc-big" id="currentColor" aria-haspopup="dialog" aria-expanded="false" aria-label="Pick a color" title="Pick a color"><span class="cc-dot" id="ccDot"></span></button>
+      <h3 class="sec">Size</h3>
+      <div class="rail-size">
+        <input type="range" id="size" min="2" max="40" value="10" step="1" aria-label="Brush size">
+        <span id="preview"><span id="previewDot"></span></span>
+      </div>
+
+      <h3 class="sec">Page</h3>
+      <div class="rail-page">
+        <button class="ubtn" id="clearBtn" title="Clear canvas" aria-label="Clear canvas">
+          <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M21 10V8.5c0-1.1.9-2 2-2h2c1.1 0 2 .9 2 2V10" fill="none" stroke="#2d2d2d" stroke-width="2.5" stroke-linecap="round"/><rect x="14.5" y="10" width="19" height="4.5" rx="2.2" fill="#fce4f3" stroke="#2d2d2d" stroke-width="2.5" stroke-linejoin="round"/><path d="M17 14.5l1.6 22.4c.1 1.6 1.4 2.8 3 2.8h4.8c1.6 0 2.9-1.2 3-2.8L31 14.5z" fill="#d4c4f0" stroke="#2d2d2d" stroke-width="2.5" stroke-linejoin="round"/><path d="M21.6 20l.6 12.5M26.4 20l-.6 12.5" fill="none" stroke="#2d2d2d" stroke-width="2" stroke-linecap="round"/></svg>
+          <span>Clear page</span>
+        </button>
+        <button class="ubtn" id="leftHandBtn" role="switch" aria-checked="false" title="Left-handed mode">
+          <span class="em" aria-hidden="true">🤚</span>
+          <span>Left-handed</span>
+        </button>
+      </div>
+    </aside>
+
+  </main>
+</div>
+
+<!-- The palette is a direct child of <body>: position:fixed inside the
+     scrollable rail gets clipped by iOS Safari, which hid every color.
+     The backdrop swallows the outside tap so it can never paint the canvas. -->
+<div class="pop-backdrop" id="popBackdrop" hidden></div>
+<div class="color-pop" id="colorPop" role="dialog" aria-label="Color palette">
+  <div class="rail-colors" id="quickColors" role="group" aria-label="Colors">
         <button class="qsw" data-color="#ffffff" style="--c:#ffffff" aria-pressed="false" aria-label="White" title="White"></button>
         <button class="qsw" data-color="#faf3c0" style="--c:#faf3c0" aria-pressed="false" aria-label="Cream" title="Cream"></button>
         <button class="qsw" data-color="#fdd0a2" style="--c:#fdd0a2" aria-pressed="false" aria-label="Peach" title="Peach"></button>
@@ -159,34 +187,12 @@ setTimeout(function () {
         <button class="qsw" data-color="#6d28d9" style="--c:#6d28d9" aria-pressed="false" aria-label="Violet" title="Violet"></button>
         <button class="qsw" data-color="#44403c" style="--c:#44403c" aria-pressed="false" aria-label="Charcoal" title="Charcoal"></button>
         <button class="qsw" data-color="#1c1917" style="--c:#1c1917" aria-pressed="false" aria-label="Black" title="Black"></button>
-        </div>
-      </div>
-
-      <h3 class="sec">Size</h3>
-      <div class="rail-size">
-        <input type="range" id="size" min="2" max="40" value="10" step="1" aria-label="Brush size">
-        <span id="preview"><span id="previewDot"></span></span>
-      </div>
-
-      <h3 class="sec">Page</h3>
-      <div class="rail-page">
-        <button class="ubtn" id="clearBtn" title="Clear canvas" aria-label="Clear canvas">
-          <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M21 10V8.5c0-1.1.9-2 2-2h2c1.1 0 2 .9 2 2V10" fill="none" stroke="#2d2d2d" stroke-width="2.5" stroke-linecap="round"/><rect x="14.5" y="10" width="19" height="4.5" rx="2.2" fill="#fce4f3" stroke="#2d2d2d" stroke-width="2.5" stroke-linejoin="round"/><path d="M17 14.5l1.6 22.4c.1 1.6 1.4 2.8 3 2.8h4.8c1.6 0 2.9-1.2 3-2.8L31 14.5z" fill="#d4c4f0" stroke="#2d2d2d" stroke-width="2.5" stroke-linejoin="round"/><path d="M21.6 20l.6 12.5M26.4 20l-.6 12.5" fill="none" stroke="#2d2d2d" stroke-width="2" stroke-linecap="round"/></svg>
-          <span>Clear page</span>
-        </button>
-        <button class="ubtn" id="leftHandBtn" role="switch" aria-checked="false" title="Left-handed mode">
-          <span class="em" aria-hidden="true">🤚</span>
-          <span>Left-handed</span>
-        </button>
-      </div>
-    </aside>
-
-  </main>
+  </div>
 </div>
 
 <div id="toast" hidden></div>
 
 <script src="pals.js?v=4"></script>
-<script src="app.js?v=22"></script>
+<script src="app.js?v=23"></script>
 </body>
 </html>
