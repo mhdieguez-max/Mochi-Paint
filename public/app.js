@@ -174,7 +174,7 @@
   workspace.addEventListener("pointercancel", touchEnd, true);
 
   // ---------- state ----------
-  var tool = "pencil", size = 10, color = "#ec4899", shade = "#ec4899";
+  var tool = "pencil", size = 10, shade = "#ec4899";
   var lastDrawTool = "pencil";
   var pageFn = null, pageImg = null, pageName = "", lineData = null;
 
@@ -287,19 +287,29 @@
   function syncCurrentColor() {
     if (ccDot) ccDot.style.background = shade;
   }
-  // tapping the big color button pops the palette open over the canvas
+  // tapping the big color button pops the palette open over the canvas;
+  // a full-screen backdrop catches outside taps so they close the palette
+  // instead of falling through and painting the canvas
   var colorPop = document.getElementById("colorPop");
+  var popBackdrop = document.getElementById("popBackdrop");
   function openColorPop(open) {
     if (!colorPop) return;
+    var wasOpen = colorPop.classList.contains("open");
     colorPop.classList.toggle("open", open);
+    if (popBackdrop) popBackdrop.hidden = !open;
     if (ccBtn) ccBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) {
+      var sel = colorPop.querySelector('.qsw[aria-pressed="true"]') || colorPop.querySelector(".qsw");
+      if (sel) sel.focus({ preventScroll: true });
+    } else if (wasOpen && ccBtn) {
+      ccBtn.focus({ preventScroll: true });
+    }
   }
   if (ccBtn) ccBtn.addEventListener("click", function () {
     openColorPop(!(colorPop && colorPop.classList.contains("open")));
   });
-  document.addEventListener("pointerdown", function (e) {
-    if (!colorPop || !colorPop.classList.contains("open")) return;
-    if (colorPop.contains(e.target) || (ccBtn && ccBtn.contains(e.target))) return;
+  if (popBackdrop) popBackdrop.addEventListener("pointerdown", function (e) {
+    e.preventDefault();
     openColorPop(false);
   });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape") openColorPop(false); });
@@ -321,14 +331,14 @@
     });
   }
   function setColorHex(hex) {
-    color = hex; shade = hex;
+    shade = hex;
     highlightColor(hex);
     updatePreview();   // syncs the current-colour swatch + size preview
   }
   quickBtns.forEach(function (b) {
     b.addEventListener("click", function () { setColorHex(b.getAttribute("data-color")); openColorPop(false); });
   });
-  setColorHex(color);
+  setColorHex(shade);
 
   // ---------- tools ----------
   var toolsEl = document.getElementById("tools");
