@@ -19,6 +19,7 @@
   <style>
     *{box-sizing:border-box}
     html{scroll-behavior:smooth}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
     /* Storybook Sky (design 1a): lavender-dawn gradient. Overrides the
        animated gradient + corner blobs animations.css paints on body. */
     body{margin:0;font-family:'Nunito',system-ui,sans-serif;color:#5A4A42;min-height:100vh;
@@ -70,7 +71,23 @@
       background:linear-gradient(180deg,#f79ab2,#ee7d9d);padding:18px 44px;border-radius:99px;text-decoration:none;
       box-shadow:0 6px 0 #d96687,0 16px 30px rgba(238,125,157,.35);transition:transform .15s}
     .cta:hover{transform:translateY(-3px);box-shadow:0 9px 0 #d96687,0 20px 34px rgba(238,125,157,.4)}
-    .section{position:relative;padding:45px 22px 56px;margin:18px 0;border-radius:46px;background:var(--bg)}
+    .section{position:relative;padding:45px 22px 56px;margin:18px 0;border-radius:46px;background:var(--bg);scroll-margin-top:10px}
+    /* "Choose a theme" — a compact tappable world grid for phones, so picking
+       a world never means swiping a chip carousel or scrolling every card.
+       Hidden on wide screens, where the chip row remains the navigator. */
+    .themes{display:none;text-align:center;padding:8px 0 2px}
+    .themes h2{font-size:26px;color:#4d3d68}
+    .theme-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:430px;margin:14px auto 0}
+    .theme-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:44px;
+      background:#fff;border-radius:18px;padding:12px 6px 10px;text-decoration:none;border:3px solid transparent;
+      box-shadow:0 6px 16px rgba(140,110,180,.16);transition:transform .15s,box-shadow .15s,border-color .15s}
+    .theme-card img{width:56px;height:56px;object-fit:contain;border-radius:14px;background:linear-gradient(180deg,#FFF,#FFF8FB)}
+    .theme-card .t-name{font-family:'Baloo 2',cursive;font-weight:700;font-size:13px;line-height:1.15;color:#5a4a72;text-wrap:balance}
+    .theme-card:hover{transform:translateY(-2px)}
+    .theme-card:active{transform:scale(.95)}
+    .theme-card[aria-current="true"]{border-color:#ee7d9d;box-shadow:0 6px 16px rgba(238,125,157,.32)}
+    .theme-card:focus-visible{outline:3px solid #8a6fae;outline-offset:2px}
+    @media(prefers-reduced-motion:reduce){.theme-card,.theme-card:hover,.theme-card:active{transition:none;transform:none}}
     .section-head{text-align:center;margin-bottom:26px}
     .section-head span{font-size:36px}
     h2{font-family:'Baloo 2',cursive;font-size:31px;margin:0;color:#5A4A42}
@@ -91,9 +108,10 @@
       .nav{padding-bottom:14px}
       /* Chips become one swipeable row so the hero stays right under the
          nav instead of a wall of stacked pills. */
-      .chips{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:none}
-      .chips::-webkit-scrollbar{display:none}
-      .chips a{flex:0 0 auto}
+      /* The theme grid replaces the chip row on phones — one navigator. */
+      .chips{display:none}
+      .themes{display:block}
+      @media(max-width:359px){.theme-grid{grid-template-columns:repeat(2,1fr)}}
       .cloud.c1{display:block;top:22px;left:2%;width:82px}
       .cloud.c2{display:block;top:34px;right:2%;width:66px}
       .hero{padding-top:16px;gap:20px}
@@ -135,6 +153,11 @@
       <a class="cta" href="/?pal=panpan">Start coloring Panpan →</a>
     </header>
 
+    <section class="themes" aria-labelledby="themesTitle">
+      <h2 id="themesTitle">Choose a theme</h2>
+      <div class="theme-grid" id="themeGrid"></div>
+    </section>
+
     <main id="groups"></main>
     <footer>
       🍡 Made with love, one pal at a time — Mochi Paint
@@ -148,13 +171,50 @@
     // coloring studio uses, so every card matches the page it opens.
     const P = window.MochiPals;
     const chips = document.getElementById("chips");
+    const themeGrid = document.getElementById("themeGrid");
     const main = document.getElementById("groups");
+
+    // One representative finished page per world for the phone theme grid.
+    const THEME_ART = {
+      meadow: "/coloring-pages/meadow/previews/usagi-bunny-color.png",
+      barnyard: "/coloring-pages/barnyard/previews/miruku-cow-color.png",
+      snow: "/coloring-pages/snow/previews/panpan-panda-color.png",
+      den: "/coloring-pages/den/previews/mochi-cat-loaf-color.png",
+      dinosaurs: "/coloring-pages/dinosaurs/previews/rexi-t-rex-color.png",
+      mermaids: "/coloring-pages/mermaids/previews/marina-mermaid-color.png",
+      halloween: "/coloring-pages/halloween/previews/patch-pumpkin-color.png",
+      christmas: "/coloring-pages/christmas/previews/rudy-reindeer-color.png",
+      sweets: "/coloring-pages/sweets/previews/star-cupcake-color.png",
+      northpole: "/coloring-pages/northpole/previews/snower-snowman-color.png",
+      "forest-pals": "/coloring-pages/forest/previews/tora-tiger-color.png"
+    };
 
     const addChip = (icon, title, slug) => {
       const chip = document.createElement("a");
       chip.href = "#" + slug;
       chip.innerHTML = `<span>${icon}</span>${title}`;
       chips.appendChild(chip);
+
+      const card = document.createElement("a");
+      card.className = "theme-card";
+      card.href = "#" + slug;
+      card.innerHTML = `
+        <img src="${THEME_ART[slug]}" alt="" aria-hidden="true" loading="lazy">
+        <span class="t-name">${icon} ${title}</span>
+      `;
+      card.addEventListener("click", (e) => {
+        // Drive the scroll ourselves: native hash-scrolls can be cut short
+        // by scroll anchoring on this long lazy-loaded page.
+        e.preventDefault();
+        themeGrid.querySelectorAll(".theme-card").forEach((c) => c.removeAttribute("aria-current"));
+        card.setAttribute("aria-current", "true");
+        const target = document.getElementById(slug);
+        if (!target) return;
+        const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        target.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
+        history.replaceState(null, "", "#" + slug);
+      });
+      themeGrid.appendChild(card);
     };
 
     P.GROUPS.forEach((group) => {
