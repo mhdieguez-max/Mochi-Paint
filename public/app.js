@@ -210,8 +210,8 @@
   var SNOW_PALS = [
     { slug: "yuki", name: "Yuki", species: "pom pup", src: "coloring-pages/snow/yuki-pom-pup.png", thumb: "coloring-pages/snow/previews/yuki-pom-pup-color.png" },
     { slug: "kori", name: "Kori", species: "polar bear", src: "coloring-pages/snow/kori-polar-bear.png", thumb: "coloring-pages/snow/previews/kori-polar-bear-color.png" },
-    { slug: "panpan", name: "Panpan", species: "panda", src: "coloring-pages/snow/panpan-panda.png", thumb: "coloring-pages/snow/previews/panpan-panda-color.png" },
-    { slug: "pen", name: "Pen", species: "penguin", src: "coloring-pages/snow/pen-penguin.png", thumb: "coloring-pages/snow/previews/pen-penguin-color.png" }
+    { slug: "panpan", name: "Panpan", species: "panda", src: "coloring-pages/snow/panpan-panda-v2.png", thumb: "coloring-pages/snow/previews/panpan-panda-color-v2.png" },
+    { slug: "pen", name: "Pen", species: "penguin", src: "coloring-pages/snow/pen-penguin-v2.png", thumb: "coloring-pages/snow/previews/pen-penguin-color-v2.png" }
   ];
   var DEN_PALS = [
     { slug: "mochi", name: "Mochi", species: "cat loaf", src: "coloring-pages/den/mochi-cat-loaf.png", thumb: "coloring-pages/den/previews/mochi-cat-loaf-color.png" },
