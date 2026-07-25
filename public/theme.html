@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Mochi Paint Coloring Pages</title>
+  <meta name="description" content="Pick a pal from this world and start coloring right in your browser.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/animations.css?v=3">
+  <style>
+    *{box-sizing:border-box}
+    /* Storybook Sky — same lavender-dawn backdrop as the home page. */
+    body{margin:0;font-family:'Nunito',system-ui,sans-serif;color:#5A4A42;min-height:100vh;
+      background:#f7dcea;background-size:auto;animation:none}
+    body:after{content:none;animation:none}
+    body:before{content:"";position:fixed;inset:0;z-index:-1;border-radius:0;filter:none;opacity:1;width:auto;height:auto;top:0;left:0;
+      background:linear-gradient(180deg,#e6dcf7 0%,#f7dcea 45%,#fdeee2 100%);animation:none}
+    .shell{position:relative;z-index:1;max-width:1240px;margin:0 auto;
+      padding:calc(22px + env(safe-area-inset-top)) calc(22px + env(safe-area-inset-right)) calc(50px + env(safe-area-inset-bottom)) calc(22px + env(safe-area-inset-left))}
+    .nav{display:flex;align-items:center;justify-content:center;padding:6px 4px 18px}
+    .brand{display:flex;align-items:center;gap:8px;font-family:'Baloo 2',cursive;font-weight:800;font-size:24px;color:#5a4a72;white-space:nowrap;text-decoration:none}
+    .back-row{display:flex;justify-content:center;padding:0 0 16px}
+    .back{display:inline-flex;align-items:center;gap:7px;font-family:'Baloo 2',cursive;font-weight:700;font-size:15px;padding:10px 20px;border-radius:99px;
+      background:#ffffffcc;color:#7a68a0;text-decoration:none;box-shadow:0 4px 12px rgba(140,110,180,.14);transition:transform .15s,background .15s,color .15s}
+    .back:hover{background:#fff;color:#5a4a72;transform:translateY(-2px)}
+    .section{position:relative;padding:45px 22px 56px;margin:6px 0 18px;border-radius:46px;background:var(--bg)}
+    .section-head{text-align:center;margin-bottom:26px}
+    h1{font-family:'Baloo 2',cursive;font-size:34px;margin:0;color:#5A4A42}
+    .tagline{max-width:660px;margin:6px auto 0;color:#81706A;font-weight:700;line-height:1.42}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,160px));gap:14px;justify-content:center}
+    .card{display:flex;flex-direction:column;align-items:center;gap:7px;text-decoration:none;background:#fff;border:3px solid var(--accent);border-radius:20px;padding:16px 10px 15px;box-shadow:0 8px 20px rgba(150,120,140,.16);transition:transform .15s,box-shadow .15s}
+    .card:hover{transform:translateY(-4px);box-shadow:0 13px 24px rgba(150,120,140,.22)}
+    .art{width:92px;height:92px;display:block;border-radius:22px;background:linear-gradient(180deg,#FFF,#FFF8FB)}
+    .forest-art{object-fit:contain;padding:4px}
+    .name{font-family:'Baloo 2',cursive;font-size:18px;font-weight:800;color:#6B5350;line-height:1}
+    .species{font-size:11px;font-weight:800;color:#A08F88;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+    .pill{font-size:12px;font-weight:800;color:#fff;background:var(--accent);padding:5px 14px;border-radius:999px;margin-top:3px}
+    footer{text-align:center;padding:36px 20px 20px;color:#9a8ab2;font-size:14px;font-weight:700}
+    .foot-links{margin-top:8px;font-size:12px}
+    .foot-links a{color:#a98fc9;text-decoration:underline}
+    @media(max-width:760px){
+      .shell{padding:calc(14px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(36px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left))}
+      .nav{padding-bottom:12px}
+      .section{padding:34px 12px 44px;border-radius:34px}
+      .grid{grid-template-columns:repeat(2,minmax(0,1fr));max-width:344px;margin:0 auto;gap:12px}
+      .art{width:78px;height:78px}
+    }
+    @media(prefers-reduced-motion:reduce){.back,.back:hover,.card,.card:hover{transition:none;transform:none}}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <nav class="nav">
+      <a class="brand" href="/home"><span>🍡</span><span>Mochi Paint</span></a>
+    </nav>
+    <div class="back-row"><a class="back" href="/home">← All themes</a></div>
+    <main id="world"></main>
+    <footer>
+      🍡 Made with love, one pal at a time — Mochi Paint
+      <div class="foot-links"><a href="/privacy.html">Privacy</a> · <a href="/data-deletion.html">Data deletion</a></div>
+    </footer>
+  </div>
+
+  <script src="/pals.js?v=4"></script>
+  <script>
+    // One world per page: /theme?world=snow. Cards reuse the exact preview
+    // art and draw functions the home page and coloring studio use.
+    const P = window.MochiPals;
+    const slug = new URLSearchParams(location.search).get("world");
+
+    const IMAGE_ART = {
+      usagi: "/coloring-pages/meadow/previews/usagi-bunny-color.png",
+      fuwa: "/coloring-pages/meadow/previews/fuwa-sheep-color.png",
+      kero: "/coloring-pages/meadow/previews/kero-frog-color.png",
+      hachi: "/coloring-pages/meadow/previews/hachi-bee-color.png",
+      miruku: "/coloring-pages/barnyard/previews/miruku-cow-color.png",
+      kobo: "/coloring-pages/barnyard/previews/kobo-puppy-color.png",
+      piyo: "/coloring-pages/barnyard/previews/piyo-chick-color.png",
+      kamo: "/coloring-pages/barnyard/previews/kamo-duck-color.png",
+      yuki: "/coloring-pages/snow/previews/yuki-pom-pup-color.png",
+      kori: "/coloring-pages/snow/previews/kori-polar-bear-color.png",
+      panpan: "/coloring-pages/snow/previews/panpan-panda-color-v2.png",
+      pen: "/coloring-pages/snow/previews/pen-penguin-color-v2.png",
+      mochi: "/coloring-pages/den/previews/mochi-cat-loaf-color.png",
+      kuma: "/coloring-pages/den/previews/kuma-bear-color.png",
+      hamu: "/coloring-pages/den/previews/hamu-hamster-color.png",
+      hari: "/coloring-pages/den/previews/hari-hedgehog-color.png",
+      rexi: "/coloring-pages/dinosaurs/previews/rexi-t-rex-color.png",
+      trixie: "/coloring-pages/dinosaurs/previews/trixie-triceratops-color.png",
+      spike: "/coloring-pages/dinosaurs/previews/spike-stegosaurus-color.png",
+      ptera: "/coloring-pages/dinosaurs/previews/ptera-pterodactyl-color.png",
+      marina: "/coloring-pages/mermaids/previews/marina-mermaid-color.png",
+      coral: "/coloring-pages/mermaids/previews/coral-seahorse-color.png",
+      jelli: "/coloring-pages/mermaids/previews/jelli-jellyfish-color.png",
+      splash: "/coloring-pages/mermaids/previews/splash-dolphin-color.png",
+      patch: "/coloring-pages/halloween/previews/patch-pumpkin-color.png",
+      boo: "/coloring-pages/halloween/previews/boo-ghost-color.png",
+      miso: "/coloring-pages/halloween/previews/miso-witch-cat-color.png",
+      nox: "/coloring-pages/halloween/previews/nox-bat-color.png",
+      rudy: "/coloring-pages/christmas/previews/rudy-reindeer-color.png",
+      flurry: "/coloring-pages/christmas/previews/flurry-snowman-color.png",
+      piney: "/coloring-pages/christmas/previews/piney-christmas-tree-color.png",
+      noel: "/coloring-pages/christmas/previews/noel-santa-bear-color.png",
+      icy: "/coloring-pages/sweets/previews/icy-snow-cone-color.png",
+      star: "/coloring-pages/sweets/previews/star-cupcake-color.png",
+      dream: "/coloring-pages/sweets/previews/dream-donut-color.png",
+      crumby: "/coloring-pages/sweets/previews/crumby-cookie-color.png",
+      snower: "/coloring-pages/northpole/previews/snower-snowman-color.png",
+      sparkle: "/coloring-pages/northpole/previews/sparkle-reindeer-color.png",
+      mistle: "/coloring-pages/northpole/previews/mistle-elf-color.png",
+      popper: "/coloring-pages/northpole/previews/popper-peppermint-duo-color.png"
+    };
+
+    // Rainforest Pals ship as finished line-art assets, not pals.js
+    // characters, so this world carries its own card list.
+    const FOREST = {
+      title: "Rainforest Pals",
+      tagline: "Gentle jungle and woodland friends from the leafy riverside, ready for color.",
+      accent: "#74A966",
+      bg: "linear-gradient(160deg,#EAF7DD,#FFF9E9)",
+      pals: [
+        { slug: "ellie", name: "Ellie", species: "elephant", image: "/coloring-pages/forest/previews/ellie-elephant-color.png" },
+        { slug: "suki", name: "Suki", species: "snake", image: "/coloring-pages/forest/previews/suki-snake-color.png" },
+        { slug: "tora", name: "Tora", species: "tiger", image: "/coloring-pages/forest/previews/tora-tiger-color.png" },
+        { slug: "mika", name: "Mika", species: "cat", image: "/coloring-pages/forest/previews/mika-cat-color.png" },
+        { slug: "momo", name: "Momo", species: "monkey", image: "/coloring-pages/forest/previews/momo-monkey-color.png" },
+        { slug: "leo", name: "Leo", species: "lion", image: "/coloring-pages/forest/previews/leo-lion-color.png" }
+      ]
+    };
+
+    const group = slug === "forest-pals" ? FOREST : P.GROUPS.find((g) => g.slug === slug);
+    if (!group) {
+      location.replace("/home");
+    } else {
+      document.title = group.title + " — Mochi Paint Coloring Pages";
+      const pals = slug === "forest-pals"
+        ? FOREST.pals
+        : P.PALS.filter((pal) => pal.group === slug);
+
+      const section = document.createElement("section");
+      section.className = "section";
+      section.style.setProperty("--accent", group.accent);
+      section.style.setProperty("--bg", group.bg);
+      section.innerHTML = `
+        <div class="section-head">
+          <h1>${group.title}</h1>
+          <p class="tagline">${group.tagline}</p>
+        </div>
+        <div class="grid"></div>
+      `;
+      const grid = section.querySelector(".grid");
+      pals.forEach((pal) => {
+        const card = document.createElement("a");
+        card.className = "card";
+        card.href = "/?pal=" + encodeURIComponent(pal.slug);
+        const image = pal.image || IMAGE_ART[pal.slug];
+        const art = image
+          ? `<img class="art forest-art" src="${image}" alt="${pal.name} the ${pal.species} coloring page" loading="lazy">`
+          : `<canvas class="art" data-pal="${pal.slug}" aria-hidden="true"></canvas>`;
+        card.innerHTML = `
+          ${art}
+          <div class="name">${pal.name}</div>
+          <div class="species">the ${pal.species}</div>
+          <div class="pill">Color me →</div>
+        `;
+        grid.appendChild(card);
+      });
+      document.getElementById("world").appendChild(section);
+
+      function paintAll() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 3);
+        document.querySelectorAll("canvas[data-pal]").forEach((canvas) => {
+          const pal = P.bySlug(canvas.dataset.pal);
+          const cw = canvas.clientWidth || 92;
+          const px = Math.round(cw * dpr);
+          if (!pal || !px) return;
+          canvas.width = px;
+          canvas.height = px;
+          const ctx = canvas.getContext("2d");
+          P.render(ctx, px / 2, px / 2 + px * 0.02, px * 0.44, pal.draw, false);
+        });
+      }
+      paintAll();
+      let resizeT;
+      window.addEventListener("resize", () => {
+        clearTimeout(resizeT);
+        resizeT = setTimeout(paintAll, 120);
+      });
+    }
+
+    if ("serviceWorker" in navigator && location.protocol === "https:") {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  </script>
+</body>
+</html>
