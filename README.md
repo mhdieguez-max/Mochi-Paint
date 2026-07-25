@@ -1,20 +1,25 @@
-# Mochi Paint Supabase Gallery
+# Mochi Paint
 
-The deployed app is configured by `public/config.js`.
+Mochi Paint is an all-ages, installable coloring PWA hosted as static assets
+with Cloudflare Workers. It has no accounts, advertisements, analytics,
+third-party trackers, gallery, or cloud artwork uploads.
 
-Current project URL:
+## Local development
 
-```js
-https://gtfzpyuuwnipudifdtdz.supabase.co
+```bash
+python3 -m http.server 8000 --directory public
 ```
 
-The gallery is enabled with this Supabase project in `public/config.js`:
+Open `http://localhost:8000/`.
 
-```js
-window.KAWAII_CONFIG = {
-  supabaseUrl: "https://gtfzpyuuwnipudifdtdz.supabase.co",
-  supabaseAnonKey: "sb_publishable_QGqaiZCFhnEFbfm5YAEP1Q_P0W_KSzr"
-};
+## Compliance checks
+
+```bash
+node scripts/compliance-audit.mjs
 ```
 
-Run `public/supabase-schema.sql` in Supabase SQL Editor if the `artworks` storage bucket has not been created yet.
+The audit verifies the PWA manifest, local fonts, parental-gate integration,
+service-worker shell, and absence of known tracking or sharing integrations.
+
+Android/TWA setup and Play Console declarations are documented in
+`docs/google-play-handoff.md`.

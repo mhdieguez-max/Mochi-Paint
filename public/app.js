@@ -472,7 +472,7 @@
   function drawPage() {
     lctx.clearRect(0, 0, W, H);
     maskCanvas = null; maskBits = null;   // region masks depend on lineData
-    if (!pageFn && !pageImg) { lineData = null; return; }
+    if (!pageFn && !pageImg) { lineData = null; buildZones(); return; }
     if (pageImg) {
       // image-based coloring page (e.g. Forest Pals): fit centred with a margin
       var m = Math.min(W, H) * 0.04;
@@ -495,6 +495,7 @@
     }
     lctx.putImageData(img, 0, 0);
     lineData = d;
+    buildZones();   // region labels + authored zone grouping, cached per layout
   }
   // The page to color is picked on the home screen and arrives via the
   // /?pal=<slug> deep link — boot() below loads it (image-based pals from
@@ -595,35 +596,22 @@
     g.drawImage(lines, 0, 0);
     return t;
   }
-  // Export the finished artwork (paint + line art). On phones the Web Share
-  // sheet offers "Save Image" straight into the photo gallery; everywhere
-  // else (or if the user dismisses the sheet's share failing) it falls back
-  // to a plain PNG download. Fully on-device — nothing is uploaded.
+  // Export the finished artwork (paint + line art) as a local PNG download.
+  // The app deliberately does not invoke the system share sheet.
   function downloadArtwork(blob) {
     var a = document.createElement("a");
     var url = URL.createObjectURL(blob);
-    a.download = "kawaii-drawing.png";
+    a.download = "mochi-paint.png";
     a.href = url;
     document.body.appendChild(a);
     a.click();
     a.remove();
     setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-    toast("Saved as kawaii-drawing.png 💾");
+    toast("Saved as mochi-paint.png 💾");
   }
   document.getElementById("saveBtn").addEventListener("click", function () {
     compositeCanvas().toBlob(function (blob) {
       if (!blob) { toast("Hmm, couldn't export that — try again 🙈"); return; }
-      var file = null;
-      try { file = new File([blob], "mochi-paint.png", { type: "image/png" }); } catch (e) { }
-      if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({ files: [file], title: "Mochi Paint" }).then(function () {
-          toast("Sent! Pick Save Image to keep it in Photos 📸");
-        }).catch(function (err) {
-          if (err && err.name === "AbortError") return;   // sheet dismissed
-          downloadArtwork(blob);
-        });
-        return;
-      }
       downloadArtwork(blob);
     }, "image/png");
   });
@@ -710,57 +698,187 @@
     }
     return null;
   }
-  // Flood the enclosed region around (x, y) using ONLY the line art as walls
-  // (never the paint already on the board). Returns the region bitmap, plus a
-  // copy dilated a few pixels INTO the outline ink: paint tucked under the
-  // antialiased edge of a line kills white fringing, and stays invisible
-  // because the line layer always draws on top. Dilation only ever spreads
-  // into wall pixels, so it can never leak into a neighboring open region.
-  function traceRegion(x, y) {
-    var seen = new Uint8Array(W * H), stack = [x, y];
-    var filled = 0, border = false;
-    while (stack.length) {
-      var py = stack.pop(), px = stack.pop();
-      if (px < 0 || py < 0 || px >= W || py >= H) continue;
-      var idx = py * W + px;
-      if (seen[idx]) continue;
-      if (lineData[idx * 4 + 3] > 60) continue;
-      seen[idx] = 1;
-      filled++;
-      if (px === 0 || py === 0 || px === W - 1 || py === H - 1) border = true;
-      stack.push(px + 1, py, px - 1, py, px, py + 1, px, py - 1);
+  // ---------- paint zones ----------
+  // A "zone" is the authored paint target of one tap: usually a single
+  // enclosed region, but for image-based pages it can group DISCONNECTED
+  // regions that belong together — Yuki's ear inners, cheeks, and open
+  // mouth fill with the fur they sit on, a scarf split by its hanging tail
+  // fills as one scarf. Groups are authored per page as points in the
+  // source image's native pixels (deterministic, no runtime guessing);
+  // any region not listed stays its own zone, which automatically keeps
+  // eye highlights and shine marks separate. Region labels are computed
+  // once per page load / resize; each zone's mask is built on first use
+  // and cached.
+  var ZONE_GROUPS = {
+    yuki: [
+      // fur: head + body + tail + ear inners + cheeks + open mouth
+      [[504, 649], [480, 1200], [892, 965], [398, 456], [659, 486], [330, 723], [654, 751], [492, 767]],
+      // scarf: left band + right band + hanging tail + tail fringe
+      [[365, 896], [738, 871], [604, 967], [609, 1101]],
+      // trees fill as one tree each
+      [[107, 357], [107, 459]],
+      [[926, 370], [929, 471]]
+    ],
+    kori: [
+      // bear: head + body + ear rings/inners + cheeks + foot pads
+      [[518, 467], [505, 819], [689, 276], [678, 291], [348, 278], [357, 293], [681, 552], [355, 552], [624, 815], [357, 976], [361, 1000]],
+      // caught fish: body + tail + fins
+      [[630, 978], [687, 1046], [721, 959], [733, 1062], [642, 1064], [686, 990]],
+      // ice fishing hole
+      [[586, 1135], [740, 1145], [648, 1183]],
+      // ice floe: top + carved side facets
+      [[522, 1089], [48, 997], [1001, 1110], [53, 1158], [108, 1183], [190, 1222], [288, 1285], [399, 1319], [522, 1338], [680, 1333], [813, 1294], [886, 1269], [947, 1209]]
+    ],
+    panpan: [
+      // panda: body/face + ear rings/inners + cheeks + nose + mouth + feet
+      [[509, 779], [318, 347], [329, 375], [725, 349], [715, 375], [306, 656], [736, 653], [520, 644], [519, 699], [309, 1100], [724, 1100]],
+      // bamboo stick in paw
+      [[577, 953], [479, 1044], [520, 1006], [437, 1081], [654, 876], [631, 901]]
+    ],
+    pen: [
+      // penguin: body + wings + cheeks + patch between feet
+      [[474, 597], [162, 786], [781, 788], [299, 655], [657, 656], [471, 1051]],
+      // beak + feet (the orange bits)
+      [[476, 657], [477, 660], [367, 1070], [577, 1071]],
+      // ice floe: top + side facets
+      [[518, 1134], [78, 1173], [929, 1265], [484, 1333]],
+      // fish friend: body + tail + fins
+      [[754, 1080], [856, 1094], [804, 1135], [838, 1027]],
+      // snowflakes fill as one flake each
+      [[183, 176], [202, 134], [158, 135], [226, 174], [137, 178], [206, 218], [162, 220]],
+      [[849, 174], [873, 137], [804, 177], [895, 177], [827, 219], [873, 219]]
+    ]
+  };
+  var zoneLabels = null;   // Int32Array: component id + 1 per open pixel, 0 = ink
+  var zoneIds = null;      // zoneIds[label] -> resolved zone id after grouping
+  var zoneMasks = null;    // zone id -> {bits, canvas, filled, border}
+  function buildZones() {
+    zoneLabels = null; zoneIds = null; zoneMasks = null;
+    if (!lineData) return;
+    var labels = new Int32Array(W * H);
+    var sizes = [0], microSeed = [0], borderFlag = [0];
+    var stack = [];
+    for (var s = 0; s < W * H; s++) {
+      if (labels[s] || lineData[s * 4 + 3] > 60) continue;
+      var id = sizes.length, n = 0, touch = 0;
+      stack.length = 0; stack.push(s); labels[s] = id;
+      while (stack.length) {
+        var i = stack.pop(); n++;
+        var x = i % W, y = (i / W) | 0;
+        if (x === 0 || y === 0 || x === W - 1 || y === H - 1) touch = 1;
+        if (x > 0 && !labels[i - 1] && lineData[(i - 1) * 4 + 3] <= 60) { labels[i - 1] = id; stack.push(i - 1); }
+        if (x < W - 1 && !labels[i + 1] && lineData[(i + 1) * 4 + 3] <= 60) { labels[i + 1] = id; stack.push(i + 1); }
+        if (y > 0 && !labels[i - W] && lineData[(i - W) * 4 + 3] <= 60) { labels[i - W] = id; stack.push(i - W); }
+        if (y < H - 1 && !labels[i + W] && lineData[(i + W) * 4 + 3] <= 60) { labels[i + W] = id; stack.push(i + W); }
+      }
+      sizes.push(n); microSeed.push(s); borderFlag.push(touch);
     }
-    // The first ring around the region is ink by construction (any open pixel
-    // touching the region would already be in it), so a couple of dilation
-    // passes stay hidden under the line. Growing into ANY unmasked pixel —
-    // not just ink — also swallows the isolated antialiasing pockets inside
-    // the line fringe that the flood can't reach (they'd read as pinholes).
+    // union-find over component ids
+    var parent = new Int32Array(sizes.length);
+    for (var p = 0; p < parent.length; p++) parent[p] = p;
+    var find = function (a) { while (parent[a] !== a) { parent[a] = parent[parent[a]]; a = parent[a]; } return a; };
+    var union = function (a, b) { a = find(a); b = find(b); if (a !== b) parent[b] = a; };
+    // authored groups (image-based pages; points are source-image pixels)
+    var groups = pageImg && ZONE_GROUPS[currentSlug];
+    if (groups) {
+      var m = Math.min(W, H) * 0.04;
+      var sc = Math.min((W - 2 * m) / pageImg.width, (H - 2 * m) / pageImg.height);
+      var gox = (W - pageImg.width * sc) / 2, goy = (H - pageImg.height * sc) / 2;
+      // Authored points must land in open paper. A tiny nudge absorbs
+      // scaling jitter, but never roams far — a distant nudge could union
+      // a NEIGHBORING region into the zone, which is worse than skipping.
+      var labelNear = function (cx, cy) {
+        cx = Math.round(cx); cy = Math.round(cy);
+        for (var r = 0; r <= 3; r++) {
+          for (var a = 0; a < 12; a++) {
+            var nx = Math.round(cx + Math.cos(a / 12 * 6.283) * r);
+            var ny = Math.round(cy + Math.sin(a / 12 * 6.283) * r);
+            if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+            var l = labels[ny * W + nx];
+            if (l) return l;
+          }
+        }
+        return 0;
+      };
+      for (var gi = 0; gi < groups.length; gi++) {
+        var first = 0;
+        for (var pi = 0; pi < groups[gi].length; pi++) {
+          var gl = labelNear(gox + groups[gi][pi][0] * sc, goy + groups[gi][pi][1] * sc);
+          if (!gl) continue;
+          if (!first) first = gl; else union(first, gl);
+        }
+      }
+    }
+    // Antialiasing pockets: tiny open islands sealed inside the line fringe
+    // read as white pinholes if left out. Melt any component of 12px or less
+    // into the first real region within a few pixels through the ink.
+    // (Real details like the nose shine are bigger and keep their own zone.)
+    for (var mc = 1; mc < sizes.length; mc++) {
+      if (sizes[mc] > 12) continue;
+      var sx = microSeed[mc] % W, sy = (microSeed[mc] / W) | 0;
+      var found = 0;
+      for (var r = 1; r <= 6 && !found; r++) {
+        for (var a = 0; a < 16 && !found; a++) {
+          var nx = Math.round(sx + Math.cos(a / 16 * 6.283) * r);
+          var ny = Math.round(sy + Math.sin(a / 16 * 6.283) * r);
+          if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+          var nl = labels[ny * W + nx];
+          if (nl && nl !== mc && sizes[nl] > 12) { union(nl, mc); found = 1; }
+        }
+      }
+    }
+    var ids = new Int32Array(sizes.length);
+    for (var z = 1; z < sizes.length; z++) ids[z] = find(z);
+    zoneLabels = labels; zoneIds = ids; zoneMasks = {};
+    // border flags roll up to the zone root so leak feedback stays accurate
+    var zb = {};
+    for (var zb1 = 1; zb1 < sizes.length; zb1++) if (borderFlag[zb1]) zb[ids[zb1]] = 1;
+    zoneMasks.borderZones = zb;
+  }
+  // Build (and cache) the full mask for one zone: every member region, plus
+  // a few pixels of bleed INTO the outline ink only, so antialiasing can't
+  // expose white seams. The bleed never crosses into another open region.
+  function zoneMask(zid) {
+    var cached = zoneMasks["z" + zid];
+    if (cached) return cached;
+    var bits = new Uint8Array(W * H);
+    var filled = 0;
+    for (var i = 0; i < W * H; i++) {
+      var l = zoneLabels[i];
+      if (l && zoneIds[l] === zid) { bits[i] = 1; filled++; }
+    }
     var R = Math.max(2, Math.round(W / 400));
-    var mask = new Uint8Array(seen);
     for (var pass = 0; pass < R; pass++) {
       var grown = [];
       for (var yy = 0; yy < H; yy++) {
         var row = yy * W;
         for (var xx = 0; xx < W; xx++) {
-          var i = row + xx;
-          if (mask[i]) continue;
-          if ((xx > 0 && mask[i - 1]) || (xx < W - 1 && mask[i + 1]) ||
-              (yy > 0 && mask[i - W]) || (yy < H - 1 && mask[i + W])) grown.push(i);
+          var j = row + xx;
+          if (bits[j] || lineData[j * 4 + 3] <= 60) continue;   // bleed into ink only
+          if ((xx > 0 && bits[j - 1]) || (xx < W - 1 && bits[j + 1]) ||
+              (yy > 0 && bits[j - W]) || (yy < H - 1 && bits[j + W])) grown.push(j);
         }
       }
-      for (var g = 0; g < grown.length; g++) mask[grown[g]] = 1;
+      for (var g = 0; g < grown.length; g++) bits[grown[g]] = 1;
     }
-    return { core: seen, mask: mask, filled: filled, border: border };
-  }
-  function buildRegionMask(x, y) {
-    var region = traceRegion(x, y);
     var img = ctx.createImageData(W, H), od = img.data;
-    for (var i = 0; i < region.mask.length; i++) if (region.mask[i]) od[i * 4 + 3] = 255;
+    for (var b = 0; b < bits.length; b++) if (bits[b]) od[b * 4 + 3] = 255;
     var c = document.createElement("canvas");
     c.width = W; c.height = H;
     c.getContext("2d").putImageData(img, 0, 0);
-    maskBits = region.core;
-    return c;
+    var mask = { bits: bits, canvas: c, filled: filled, border: !!zoneMasks.borderZones[zid] };
+    zoneMasks["z" + zid] = mask;
+    return mask;
+  }
+  function zoneAt(x, y) {
+    if (!zoneLabels) return 0;
+    var l = zoneLabels[y * W + x];
+    return l ? zoneIds[l] : 0;
+  }
+  function buildRegionMask(x, y) {
+    var mask = zoneMask(zoneAt(x, y));
+    maskBits = mask.bits;
+    return mask.canvas;
   }
   // Prepare clipping for a stroke starting at p. Returns false only when the
   // stroke starts squarely on an outline (nothing sensible to clip to).
@@ -843,28 +961,31 @@
     }
     g.globalAlpha = 1;
   }
-  // Paint-can fill. On a coloring page the walls come from the line art ONLY
-  // (lineData, sampled once per page) — never from paint already on the
-  // board — so one tap repaints the whole enclosed region with one solid
-  // opaque color, covering earlier strokes, pockets between doodles, and the
-  // antialiased fringe tucked under the outline. Outlines stay crisp because
-  // the line layer always draws on top.
+  // Paint-can fill. On a coloring page one tap paints the whole AUTHORED
+  // zone under the finger — including disconnected member regions like ear
+  // inners or cheeks — with one solid opaque color in a single putImageData.
+  // Walls come from the line art only (never from paint already on the
+  // board), repainting replaces the zone completely, and the mask's bleed
+  // under the ink means no white seams. Outlines stay crisp because the
+  // line layer always draws on top.
   function floodFill(x, y) {
     x = Math.max(0, Math.min(W - 1, Math.round(x)));
     y = Math.max(0, Math.min(H - 1, Math.round(y)));
     if (lineData) {
       var seed = findRegionSeed(x, y);
       if (!seed) return { filled: 0, border: false, onLine: true };
-      var region = traceRegion(seed[0], seed[1]);
+      var zid = zoneAt(seed[0], seed[1]);
+      if (!zid) return { filled: 0, border: false, onLine: true };
+      var zone = zoneMask(zid);
       var img = ctx.getImageData(0, 0, W, H), d = img.data;
-      var f = hexRgb(shade), mask = region.mask;
+      var f = hexRgb(shade), mask = zone.bits;
       for (var i = 0; i < mask.length; i++) {
         if (!mask[i]) continue;
         var j = i * 4;
         d[j] = f[0]; d[j + 1] = f[1]; d[j + 2] = f[2]; d[j + 3] = 255;
       }
       ctx.putImageData(img, 0, 0);
-      return { filled: region.filled, border: region.border, onLine: false };
+      return { filled: zone.filled, border: zone.border, onLine: false };
     }
     // Blank free-draw page: no outlines to bound a region, so fill the patch
     // of similar color under the tap (classic tolerance flood fill).
@@ -1050,7 +1171,14 @@
         updateHistoryButtons();
         hideSplash();
       };
-      img.onerror = function () { startForest = null; boot(); };   // fall back to the default pal
+      img.onerror = function () {
+        var wasOffline = !navigator.onLine;
+        startForest = null;
+        boot();   // fall back to the built-in default pal
+        if (wasOffline) setTimeout(function () {
+          toast("That page has not been saved for offline use yet. Showing an offline-ready pal instead.");
+        }, 0);
+      };
       img.src = pal.src;
       syncCurrentColor();
       return;

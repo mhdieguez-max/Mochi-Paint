@@ -3,11 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; form-action 'none'; frame-src 'none'">
   <title>Mochi Paint Coloring Pages</title>
   <meta name="description" content="Pick a pal from this world and start coloring right in your browser.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="stylesheet" href="/fonts.css">
+  <link rel="stylesheet" href="/parental-gate.css">
   <link rel="stylesheet" href="/animations.css?v=3">
   <style>
     *{box-sizing:border-box}
@@ -59,10 +60,11 @@
     <main id="world"></main>
     <footer>
       🍡 Made with love, one pal at a time — Mochi Paint
-      <div class="foot-links"><a href="/privacy.html">Privacy</a> · <a href="/data-deletion.html">Data deletion</a></div>
+      <div class="foot-links"><a href="/privacy.html" data-parental-gate>Privacy</a> · <a href="/data-deletion.html" data-parental-gate>Data deletion</a></div>
     </footer>
   </div>
 
+  <script src="/parental-gate.js"></script>
   <script src="/pals.js?v=4"></script>
   <script>
     // One world per page: /theme?world=snow. Cards reuse the exact preview

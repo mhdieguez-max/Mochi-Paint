@@ -3,11 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; form-action 'none'; frame-src 'none'">
   <title>Rainforest Pals Coloring Pages — Mochi Paint</title>
   <meta name="description" content="Six free, printable kawaii animal coloring pages from Mochi Paint.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="stylesheet" href="/fonts.css">
+  <link rel="stylesheet" href="/parental-gate.css">
   <style>
     *{box-sizing:border-box}
     body{margin:0;color:#594b43;font-family:'Quicksand',system-ui,sans-serif;background:linear-gradient(180deg,#eef9df,#fdf5e6 48%,#f9eaf2);min-height:100vh}
@@ -51,6 +52,7 @@
     </main>
     <footer>🍡 Mochi Paint — made for little artists</footer>
   </div>
+  <script src="/parental-gate.js"></script>
   <script>
     document.querySelectorAll('[data-print]').forEach(function(button){
       button.addEventListener('click',function(){

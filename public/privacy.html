@@ -3,11 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; form-action 'none'; frame-src 'none'">
   <title>Privacy Policy — Mochi Paint</title>
   <link rel="icon" href="/icon-192.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="stylesheet" href="/fonts.css">
+  <link rel="stylesheet" href="/parental-gate.css">
   <style>
     *{box-sizing:border-box}
     body{margin:0;font-family:'Quicksand',system-ui,sans-serif;color:#5A4A42;background:linear-gradient(180deg,#FDEFF6 0%,#F0EAFB 46%,#E4F0FD 100%);min-height:100vh}
@@ -26,33 +27,34 @@
     <a class="brand" href="/home"><span>🍡</span><span>Mochi Paint</span></a>
     <div class="card">
       <h1>Privacy Policy</h1>
-      <p class="date">Last updated: July 15, 2026</p>
+      <p class="date">Last updated: July 24, 2026</p>
 
-      <p>Mochi Paint is a kawaii coloring app made for everyone, including kids. We keep things simple: <strong>no accounts, no ads, no tracking, and no personal data collection.</strong></p>
+      <p>Mochi Paint is a coloring app designed for all ages, including children. We keep it simple: <strong>no accounts, no ads, no analytics, no behavioral tracking, and no cloud gallery.</strong></p>
 
       <h2>What stays on your device</h2>
       <ul>
-        <li>Your coloring progress is saved only on your own device, so your pictures are still there when you come back.</li>
-        <li>Uninstalling the app (or clearing its data) removes everything.</li>
+        <li>Your coloring progress and app preferences are saved locally on your device.</li>
+        <li>The Save button creates a PNG file on your device. Mochi Paint does not upload or share it.</li>
+        <li>Clearing the app's data or uninstalling the app removes its locally saved progress.</li>
       </ul>
 
-      <h2>Sharing to the community gallery (optional)</h2>
-      <p>If you tap <strong>Share to gallery</strong>, the app uploads only three things to our gallery database: the picture you colored, the title you typed, and the artist name you typed (you can leave it as "Anonymous artist"). Nothing is uploaded unless you choose to share.</p>
-      <p>Please don't put real full names or personal details in the title or artist name — a nickname is perfect.</p>
-
-      <h2>What we never collect</h2>
+      <h2>What the app does not collect</h2>
       <ul>
-        <li>No account or sign-in, no email addresses, no passwords.</li>
-        <li>No location, contacts, camera, microphone, or device identifiers.</li>
-        <li>No analytics, advertising, or third-party trackers.</li>
+        <li>No names, account details, email addresses, passwords, or user profiles.</li>
+        <li>No location, contacts, camera, microphone, advertising ID, or cross-app identifiers.</li>
+        <li>No artwork, analytics events, advertising data, or third-party tracking data.</li>
       </ul>
 
-      <h2>Deleting shared artwork</h2>
-      <p>You can ask us to remove any shared artwork at any time — see the <a href="/data-deletion.html">data deletion page</a>.</p>
+      <h2>Website delivery</h2>
+      <p>Like any website, Mochi Paint's hosting provider processes standard connection information, such as an IP address, only as needed to deliver the app securely. Mochi Paint does not use that information to identify users, build profiles, advertise, or track activity across apps or websites.</p>
+
+      <h2>Deleting local data</h2>
+      <p>See the <a href="/data-deletion.html" data-parental-gate>data deletion page</a> for instructions.</p>
 
       <h2>Contact</h2>
       <p>Questions? Email <a href="mailto:mhdieguez@icloud.com">mhdieguez@icloud.com</a>.</p>
     </div>
   </div>
+  <script src="/parental-gate.js"></script>
 </body>
 </html>
