@@ -371,26 +371,102 @@
 
   // ---------- coloring pages ----------
   // ---------- progress autosave: each pal's paint survives app restarts ----------
+  // Saves live on-device only — no accounts, no network. IndexedDB holds the
+  // image Blobs (roomy quota, so every pal's page can persist); localStorage
+  // remains both the fallback for browsers that block IndexedDB (e.g. some
+  // private modes) and the migration source for saves written by older
+  // versions of the app.
   var SAVE_PREFIX = "mochi-progress-";
   var currentSlug = "blank";
   var saveT = null;
+  var saveDb = null;
+  function openSaveDb() {
+    if (saveDb) return Promise.resolve(saveDb);
+    return new Promise(function (resolve) {
+      if (!window.indexedDB) return resolve(null);
+      var req;
+      try { req = indexedDB.open("mochi-paint", 1); } catch (e) { return resolve(null); }
+      req.onupgradeneeded = function () { req.result.createObjectStore("progress"); };
+      req.onsuccess = function () { saveDb = req.result; resolve(saveDb); };
+      req.onerror = req.onblocked = function () { resolve(null); };
+    });
+  }
+  function saveDbPut(slug, blob) {
+    return openSaveDb().then(function (db) {
+      if (!db) return false;
+      return new Promise(function (resolve) {
+        try {
+          var tx = db.transaction("progress", "readwrite");
+          tx.objectStore("progress").put(blob, slug);
+          tx.oncomplete = function () { resolve(true); };
+          tx.onabort = tx.onerror = function () { resolve(false); };
+        } catch (e) { resolve(false); }
+      });
+    });
+  }
+  function saveDbGet(slug) {
+    return openSaveDb().then(function (db) {
+      if (!db) return null;
+      return new Promise(function (resolve) {
+        try {
+          var tx = db.transaction("progress", "readonly");
+          var rq = tx.objectStore("progress").get(slug);
+          rq.onsuccess = function () { resolve(rq.result || null); };
+          rq.onerror = function () { resolve(null); };
+        } catch (e) { resolve(null); }
+      });
+    });
+  }
   function scheduleSave() {
     clearTimeout(saveT);
     saveT = setTimeout(function () {
-      try { localStorage.setItem(SAVE_PREFIX + currentSlug, board.toDataURL("image/png")); } catch (e) { }
+      var slug = currentSlug;
+      board.toBlob(function (blob) {
+        if (!blob) return;
+        saveDbPut(slug, blob).then(function (ok) {
+          if (ok) {
+            // IndexedDB is now the source of truth — free the quota-hungry
+            // dataURL copy an older version may have left behind.
+            try { localStorage.removeItem(SAVE_PREFIX + slug); } catch (e) { }
+          } else {
+            try { localStorage.setItem(SAVE_PREFIX + slug, board.toDataURL("image/png")); } catch (e) { }
+          }
+        });
+      }, "image/png");
     }, 600);
   }
   function restoreProgress() {
-    var data = null;
-    try { data = localStorage.getItem(SAVE_PREFIX + currentSlug); } catch (e) { }
-    if (!data) return;
-    var img = new Image();
-    img.onload = function () {
-      ctx.drawImage(img, 0, 0, W, H);
-      boardDirty = true;   // restored paint has no in-session history, but the
-      updateHistoryButtons();   // undo button can still reset to a fresh page
-    };
-    img.src = data;
+    var slug = currentSlug;
+    saveDbGet(slug).then(function (blob) {
+      var url = null, data = null;
+      if (blob) {
+        url = URL.createObjectURL(blob);
+      } else {
+        try { data = localStorage.getItem(SAVE_PREFIX + slug); } catch (e) { }
+        if (!data) return;
+      }
+      var img = new Image();
+      img.onload = function () {
+        if (url) URL.revokeObjectURL(url);
+        // The canvas is sized lazily (initCanvas defers until it has real
+        // layout), so the restore may finish first — wait for it rather
+        // than drawing into a 0×0 board and silently losing the save.
+        var attempt = function (tries) {
+          if (slug !== currentSlug) return;   // switched pages while loading
+          if (!ready || !W) {
+            if (tries > 0) setTimeout(function () { attempt(tries - 1); }, 120);
+            return;
+          }
+          if (boardDirty) return;   // fresh strokes beat a late restore
+          ctx.drawImage(img, 0, 0, W, H);
+          boardDirty = true;   // restored paint has no in-session history, but the
+          updateHistoryButtons();   // undo button can still reset to a fresh page
+        };
+        attempt(80);
+      };
+      img.onerror = function () { if (url) URL.revokeObjectURL(url); };
+      img.src = url || data;
+    });
   }
 
   function drawPage() {
@@ -519,14 +595,37 @@
     g.drawImage(lines, 0, 0);
     return t;
   }
-  document.getElementById("saveBtn").addEventListener("click", function () {
+  // Export the finished artwork (paint + line art). On phones the Web Share
+  // sheet offers "Save Image" straight into the photo gallery; everywhere
+  // else (or if the user dismisses the sheet's share failing) it falls back
+  // to a plain PNG download. Fully on-device — nothing is uploaded.
+  function downloadArtwork(blob) {
     var a = document.createElement("a");
+    var url = URL.createObjectURL(blob);
     a.download = "kawaii-drawing.png";
-    a.href = compositeCanvas().toDataURL("image/png");
+    a.href = url;
     document.body.appendChild(a);
     a.click();
     a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
     toast("Saved as kawaii-drawing.png 💾");
+  }
+  document.getElementById("saveBtn").addEventListener("click", function () {
+    compositeCanvas().toBlob(function (blob) {
+      if (!blob) { toast("Hmm, couldn't export that — try again 🙈"); return; }
+      var file = null;
+      try { file = new File([blob], "mochi-paint.png", { type: "image/png" }); } catch (e) { }
+      if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: "Mochi Paint" }).then(function () {
+          toast("Sent! Pick Save Image to keep it in Photos 📸");
+        }).catch(function (err) {
+          if (err && err.name === "AbortError") return;   // sheet dismissed
+          downloadArtwork(blob);
+        });
+        return;
+      }
+      downloadArtwork(blob);
+    }, "image/png");
   });
 
   // Print: a fresh line-art page if one is open, otherwise the current artwork
