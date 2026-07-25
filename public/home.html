@@ -85,7 +85,6 @@
     .theme-card .t-name{font-family:'Baloo 2',cursive;font-weight:700;font-size:13px;line-height:1.15;color:#5a4a72;text-wrap:balance}
     .theme-card:hover{transform:translateY(-2px)}
     .theme-card:active{transform:scale(.95)}
-    .theme-card[aria-current="true"]{border-color:#ee7d9d;box-shadow:0 6px 16px rgba(238,125,157,.32)}
     .theme-card:focus-visible{outline:3px solid #8a6fae;outline-offset:2px}
     @media(prefers-reduced-motion:reduce){.theme-card,.theme-card:hover,.theme-card:active{transition:none;transform:none}}
     .section-head{text-align:center;margin-bottom:26px}
@@ -195,25 +194,15 @@
       chip.innerHTML = `<span>${icon}</span>${title}`;
       chips.appendChild(chip);
 
+      // Theme cards open the world's own page — no icon, the preview art
+      // already says what the world is.
       const card = document.createElement("a");
       card.className = "theme-card";
-      card.href = "#" + slug;
+      card.href = "/theme?world=" + encodeURIComponent(slug);
       card.innerHTML = `
         <img src="${THEME_ART[slug]}" alt="" aria-hidden="true" loading="lazy">
-        <span class="t-name">${icon} ${title}</span>
+        <span class="t-name">${title}</span>
       `;
-      card.addEventListener("click", (e) => {
-        // Drive the scroll ourselves: native hash-scrolls can be cut short
-        // by scroll anchoring on this long lazy-loaded page.
-        e.preventDefault();
-        themeGrid.querySelectorAll(".theme-card").forEach((c) => c.removeAttribute("aria-current"));
-        card.setAttribute("aria-current", "true");
-        const target = document.getElementById(slug);
-        if (!target) return;
-        const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        target.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
-        history.replaceState(null, "", "#" + slug);
-      });
       themeGrid.appendChild(card);
     };
 
