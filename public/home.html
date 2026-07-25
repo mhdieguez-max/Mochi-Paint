@@ -191,7 +191,7 @@
     const addChip = (icon, title, slug) => {
       const chip = document.createElement("a");
       chip.href = "#" + slug;
-      chip.innerHTML = `<span>${icon}</span>${title}`;
+      chip.textContent = title;
       chips.appendChild(chip);
 
       // Theme cards open the world's own page — no icon, the preview art

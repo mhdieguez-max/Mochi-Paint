@@ -409,9 +409,13 @@
     }
     // Punch out the white construction fills so only the outlines remain —
     // paint on the board layer below must show through the page interior.
+    // The threshold is generous (≥236 on every channel): source art has
+    // near-white speckles like rgb(245,245,244) that a strict 255-only test
+    // leaves opaque on this TOP layer, where they occlude fills below as
+    // white grain.
     var img = lctx.getImageData(0, 0, W, H), d = img.data;
     for (var i = 0; i < d.length; i += 4) {
-      if (d[i + 3] > 0 && d[i] > 244 && d[i + 1] > 244 && d[i + 2] > 244) d[i + 3] = 0;
+      if (d[i + 3] > 0 && d[i] > 235 && d[i + 1] > 235 && d[i + 2] > 235) d[i + 3] = 0;
     }
     lctx.putImageData(img, 0, 0);
     lineData = d;
@@ -607,9 +611,15 @@
     }
     return null;
   }
-  function buildRegionMask(x, y) {
+  // Flood the enclosed region around (x, y) using ONLY the line art as walls
+  // (never the paint already on the board). Returns the region bitmap, plus a
+  // copy dilated a few pixels INTO the outline ink: paint tucked under the
+  // antialiased edge of a line kills white fringing, and stays invisible
+  // because the line layer always draws on top. Dilation only ever spreads
+  // into wall pixels, so it can never leak into a neighboring open region.
+  function traceRegion(x, y) {
     var seen = new Uint8Array(W * H), stack = [x, y];
-    var img = ctx.createImageData(W, H), od = img.data;
+    var filled = 0, border = false;
     while (stack.length) {
       var py = stack.pop(), px = stack.pop();
       if (px < 0 || py < 0 || px >= W || py >= H) continue;
@@ -617,13 +627,40 @@
       if (seen[idx]) continue;
       if (lineData[idx * 4 + 3] > 60) continue;
       seen[idx] = 1;
-      od[idx * 4 + 3] = 255;
+      filled++;
+      if (px === 0 || py === 0 || px === W - 1 || py === H - 1) border = true;
       stack.push(px + 1, py, px - 1, py, px, py + 1, px, py - 1);
     }
+    // The first ring around the region is ink by construction (any open pixel
+    // touching the region would already be in it), so a couple of dilation
+    // passes stay hidden under the line. Growing into ANY unmasked pixel —
+    // not just ink — also swallows the isolated antialiasing pockets inside
+    // the line fringe that the flood can't reach (they'd read as pinholes).
+    var R = Math.max(2, Math.round(W / 400));
+    var mask = new Uint8Array(seen);
+    for (var pass = 0; pass < R; pass++) {
+      var grown = [];
+      for (var yy = 0; yy < H; yy++) {
+        var row = yy * W;
+        for (var xx = 0; xx < W; xx++) {
+          var i = row + xx;
+          if (mask[i]) continue;
+          if ((xx > 0 && mask[i - 1]) || (xx < W - 1 && mask[i + 1]) ||
+              (yy > 0 && mask[i - W]) || (yy < H - 1 && mask[i + W])) grown.push(i);
+        }
+      }
+      for (var g = 0; g < grown.length; g++) mask[grown[g]] = 1;
+    }
+    return { core: seen, mask: mask, filled: filled, border: border };
+  }
+  function buildRegionMask(x, y) {
+    var region = traceRegion(x, y);
+    var img = ctx.createImageData(W, H), od = img.data;
+    for (var i = 0; i < region.mask.length; i++) if (region.mask[i]) od[i * 4 + 3] = 255;
     var c = document.createElement("canvas");
     c.width = W; c.height = H;
     c.getContext("2d").putImageData(img, 0, 0);
-    maskBits = seen;
+    maskBits = region.core;
     return c;
   }
   // Prepare clipping for a stroke starting at p. Returns false only when the
@@ -707,19 +744,35 @@
     }
     g.globalAlpha = 1;
   }
-  // Boundary-aware flood fill on the PAINT layer only. Outline pixels on the
-  // separate line-art layer (lineData, sampled once per page) act as walls, so
-  // paint can never cross or cover a protected outline. Returns how much was
-  // filled and whether the region reached the canvas edge (i.e. was not
-  // enclosed). A hard pixel cap keeps a runaway/leaked fill from freezing.
+  // Paint-can fill. On a coloring page the walls come from the line art ONLY
+  // (lineData, sampled once per page) — never from paint already on the
+  // board — so one tap repaints the whole enclosed region with one solid
+  // opaque color, covering earlier strokes, pockets between doodles, and the
+  // antialiased fringe tucked under the outline. Outlines stay crisp because
+  // the line layer always draws on top.
   function floodFill(x, y) {
     x = Math.max(0, Math.min(W - 1, Math.round(x)));
     y = Math.max(0, Math.min(H - 1, Math.round(y)));
-    if (lineData && lineData[(y * W + x) * 4 + 3] > 60) return { filled: 0, border: false, onLine: true };
-    var img = ctx.getImageData(0, 0, W, H), d = img.data;
-    var i0 = (y * W + x) * 4, tr = d[i0], tg = d[i0 + 1], tb = d[i0 + 2];
-    var f = hexRgb(shade);
-    if (Math.abs(tr - f[0]) + Math.abs(tg - f[1]) + Math.abs(tb - f[2]) < 12) return { filled: 0, border: false, onLine: false };
+    if (lineData) {
+      var seed = findRegionSeed(x, y);
+      if (!seed) return { filled: 0, border: false, onLine: true };
+      var region = traceRegion(seed[0], seed[1]);
+      var img = ctx.getImageData(0, 0, W, H), d = img.data;
+      var f = hexRgb(shade), mask = region.mask;
+      for (var i = 0; i < mask.length; i++) {
+        if (!mask[i]) continue;
+        var j = i * 4;
+        d[j] = f[0]; d[j + 1] = f[1]; d[j + 2] = f[2]; d[j + 3] = 255;
+      }
+      ctx.putImageData(img, 0, 0);
+      return { filled: region.filled, border: region.border, onLine: false };
+    }
+    // Blank free-draw page: no outlines to bound a region, so fill the patch
+    // of similar color under the tap (classic tolerance flood fill).
+    var img2 = ctx.getImageData(0, 0, W, H), d2 = img2.data;
+    var i0 = (y * W + x) * 4, tr = d2[i0], tg = d2[i0 + 1], tb = d2[i0 + 2];
+    var f2 = hexRgb(shade);
+    if (Math.abs(tr - f2[0]) + Math.abs(tg - f2[1]) + Math.abs(tb - f2[2]) < 12) return { filled: 0, border: false, onLine: false };
     var seen = new Uint8Array(W * H), stack = [x, y];
     var filled = 0, border = false, MAX = W * H;   // seen[] already bounds work to O(W*H)
     while (stack.length) {
@@ -727,17 +780,16 @@
       if (px < 0 || py < 0 || px >= W || py >= H) continue;
       var idx = py * W + px;
       if (seen[idx]) continue;
-      var j = idx * 4;
-      if (lineData && lineData[j + 3] > 60) continue;
-      if (Math.abs(d[j] - tr) + Math.abs(d[j + 1] - tg) + Math.abs(d[j + 2] - tb) > 110) continue;
+      var j2 = idx * 4;
+      if (Math.abs(d2[j2] - tr) + Math.abs(d2[j2 + 1] - tg) + Math.abs(d2[j2 + 2] - tb) > 110) continue;
       seen[idx] = 1;
-      d[j] = f[0]; d[j + 1] = f[1]; d[j + 2] = f[2]; d[j + 3] = 255;
+      d2[j2] = f2[0]; d2[j2 + 1] = f2[1]; d2[j2 + 2] = f2[2]; d2[j2 + 3] = 255;
       filled++;
       if (px === 0 || py === 0 || px === W - 1 || py === H - 1) border = true;
       if (filled > MAX) break;
       stack.push(px + 1, py, px - 1, py, px, py + 1, px, py - 1);
     }
-    ctx.putImageData(img, 0, 0);
+    ctx.putImageData(img2, 0, 0);
     return { filled: filled, border: border, onLine: false };
   }
 
