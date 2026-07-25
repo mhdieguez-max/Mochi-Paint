@@ -3,3 +3,14 @@
 node_modules/
 dist/
 graphify-out/
+
+# Android/Bubblewrap output and signing material
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+*.aab
+*.apk
+*.jks
+*.keystore
+signing/

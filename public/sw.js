@@ -3,19 +3,36 @@
 // offline (a Play Store requirement — never show a browser error page).
 // Runtime strategy stays network-first: fresh files whenever online, cached
 // copy when the network is gone.
-var CACHE = "mochi-paint-v21";
+var CACHE = "mochi-paint-v23";
 var CORE = [
   "/",
   "/home",
+  "/home.html",
   "/theme",
+  "/theme.html",
+  "/privacy.html",
+  "/data-deletion.html",
   "/app.js",
   "/pals.js",
   "/style.css",
+  "/animations.css",
+  "/fonts.css",
+  "/parental-gate.css",
+  "/parental-gate.js",
+  "/fonts/poppins-400.woff2",
+  "/fonts/poppins-500.woff2",
+  "/fonts/poppins-600.woff2",
+  "/fonts/poppins-700.woff2",
+  "/fonts/baloo-2-latin.woff2",
+  "/fonts/nunito-latin.woff2",
+  "/fonts/quicksand-latin.woff2",
   "/manifest.webmanifest",
   "/icon-192.png",
   "/icon-512.png",
-  "/privacy.html",
-  "/data-deletion.html"
+  "/icon-512-maskable.png",
+  "/hero-pals.png",
+  "/coloring-pages/meadow/usagi-bunny.png",
+  "/coloring-pages/meadow/previews/usagi-bunny-color.png"
 ];
 
 self.addEventListener("install", function (e) {
@@ -39,7 +56,7 @@ self.addEventListener("fetch", function (e) {
   e.respondWith(
     fetch(e.request)
       .then(function (res) {
-        if (res.ok && (e.request.url.indexOf(self.location.origin) === 0 || e.request.url.indexOf("fonts.g") > -1)) {
+        if (res.ok && e.request.url.indexOf(self.location.origin) === 0) {
           var copy = res.clone();
           caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
         }
@@ -56,7 +73,12 @@ self.addEventListener("fetch", function (e) {
             return r || caches.match("/");
           });
         }
-        return caches.match(e.request, { ignoreSearch: true });
+        return caches.match(e.request, { ignoreSearch: true }).then(function (r) {
+          return r || new Response("This asset is not available offline yet.", {
+            status: 503,
+            headers: { "Content-Type": "text/plain; charset=utf-8" }
+          });
+        });
       })
   );
 });

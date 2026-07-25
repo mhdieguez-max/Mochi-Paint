@@ -3,11 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; form-action 'none'; frame-src 'none'">
   <title>Data Deletion — Mochi Paint</title>
   <link rel="icon" href="/icon-192.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="stylesheet" href="/fonts.css">
+  <link rel="stylesheet" href="/parental-gate.css">
   <style>
     *{box-sizing:border-box}
     body{margin:0;font-family:'Quicksand',system-ui,sans-serif;color:#5A4A42;background:linear-gradient(180deg,#FDEFF6 0%,#F0EAFB 46%,#E4F0FD 100%);min-height:100vh}
@@ -25,19 +26,17 @@
     <a class="brand" href="/home"><span>🍡</span><span>Mochi Paint</span></a>
     <div class="card">
       <h1>Data Deletion</h1>
-      <p>Mochi Paint has no accounts, so there is no account to delete. The only data that can exist outside your device is artwork you chose to share to the community gallery (the picture, its title, and the artist name you typed).</p>
-
-      <h2>Delete a shared artwork</h2>
-      <p>Email <a href="mailto:mhdieguez@icloud.com?subject=Mochi%20Paint%20artwork%20deletion%20request">mhdieguez@icloud.com</a> with:</p>
-      <ul>
-        <li>the artwork's <strong>title</strong> and <strong>artist name</strong> as shown in the gallery, and</li>
-        <li>roughly when it was shared (if you remember).</li>
-      </ul>
-      <p>We will remove the artwork and its title/artist entry within <strong>30 days</strong>, usually much sooner. Nothing else about you is stored, so once the artwork is gone, all of your shared data is gone.</p>
+      <p>Mochi Paint has no accounts, cloud gallery, or server-side artwork storage. Your coloring progress and preferences stay on your device.</p>
 
       <h2>Delete on-device data</h2>
-      <p>Coloring progress lives only on your device. To erase it, clear the app's data in your phone's settings or uninstall the app.</p>
+      <ul>
+        <li>In the installed Android app, open Android Settings, choose Apps, select Mochi Paint, then clear storage.</li>
+        <li>You can also uninstall Mochi Paint to remove its locally saved progress and preferences.</li>
+        <li>PNG files you intentionally saved must be deleted separately from your device's Downloads or Files app.</li>
+      </ul>
+      <p>Because Mochi Paint does not receive your artwork or maintain user accounts, there is no remote account or gallery record to request that we delete.</p>
     </div>
   </div>
+  <script src="/parental-gate.js"></script>
 </body>
 </html>

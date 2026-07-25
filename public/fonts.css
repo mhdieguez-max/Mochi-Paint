@@ -1,0 +1,49 @@
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/poppins-400.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/poppins-500.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/poppins-600.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/poppins-700.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Baloo 2";
+  src: url("/fonts/baloo-2-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 500 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Nunito";
+  src: url("/fonts/nunito-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 500 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Quicksand";
+  src: url("/fonts/quicksand-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 500 700;
+  font-display: swap;
+}

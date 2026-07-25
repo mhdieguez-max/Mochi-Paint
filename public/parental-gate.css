@@ -1,0 +1,16 @@
+.parental-gate[hidden]{display:none}
+.parental-gate{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:20px;background:rgba(50,38,58,.62)}
+.parental-gate__dialog{width:min(420px,100%);border:0;border-radius:26px;background:#fffafc;color:#5a4a42;padding:26px;box-shadow:0 20px 60px rgba(44,31,50,.3);font-family:"Nunito",system-ui,sans-serif;text-align:center}
+.parental-gate__dialog h2{margin:0 0 8px;font-family:"Baloo 2","Poppins",system-ui,sans-serif;font-size:27px;color:#6b5350}
+.parental-gate__dialog p{margin:8px 0 16px;font-weight:700;line-height:1.45}
+.parental-gate__question{font-size:22px}
+.parental-gate__answer{display:block;width:100%;min-height:52px;margin:0 0 10px;border:2px solid #d8c6e8;border-radius:15px;background:#fff;padding:8px 12px;color:#4d4140;font:700 20px "Nunito",system-ui,sans-serif;text-align:center}
+.parental-gate__answer:focus{outline:3px solid rgba(196,112,142,.28);border-color:#c4708e}
+.parental-gate__error{min-height:22px;margin:5px 0 12px;color:#a84464;font-size:14px}
+.parental-gate__actions{display:flex;justify-content:center;gap:10px}
+.parental-gate__actions button{min-height:48px;border:0;border-radius:15px;padding:10px 20px;font:800 16px "Nunito",system-ui,sans-serif;cursor:pointer}
+.parental-gate__cancel{background:#eee8f3;color:#5d5265}
+.parental-gate__continue{background:#c4708e;color:#fff}
+body.parental-gate-open{overflow:hidden}
+@media (prefers-reduced-motion:no-preference){.parental-gate__dialog{animation:parentalGateIn .16s ease-out}}
+@keyframes parentalGateIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
