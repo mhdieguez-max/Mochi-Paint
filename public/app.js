@@ -52,6 +52,7 @@
   // pointer coordinates stay accurate because pos() reads the transformed
   // getBoundingClientRect(). Manual zoom survives viewport changes; only the
   // fit button (or a new page) resets it.
+  var appEl = document.getElementById("app");
   var workspace = document.getElementById("workspace");
   var wrapEl = document.getElementById("canvasWrap");
   var zoomF = 1, panX = 0, panY = 0, ZMIN = 0.5, ZMAX = 4;
@@ -116,6 +117,52 @@
   if (zoomOutBtn) zoomOutBtn.addEventListener("click", function () { setZoom(zoomF / 1.25); });
   if (zoomFitBtn) zoomFitBtn.addEventListener("click", function () { fitLayout(); resetView(); });
 
+  // ---------- fullscreen / focus mode ----------
+  // Real fullscreen where the API exists (desktop, Android, iPadOS). iPhone
+  // Safari has no element fullscreen, so the same button becomes "focus
+  // mode": it fades the chrome away and stays visible as the exit.
+  var fsBtn = document.getElementById("fullscreenBtn");
+  var fsRoot = document.documentElement;
+  var fsSupported = !!(fsRoot.requestFullscreen || fsRoot.webkitRequestFullscreen);
+  function fsActive() {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement) ||
+      appEl.classList.contains("focus-mode");
+  }
+  function syncFsBtn() {
+    if (!fsBtn) return;
+    var on = fsActive();
+    fsBtn.querySelector(".fs-enter").hidden = on;
+    fsBtn.querySelector(".fs-exit").hidden = !on;
+    fsBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    var label = fsSupported
+      ? (on ? "Exit fullscreen" : "Enter fullscreen")
+      : (on ? "Show the buttons again" : "Focus mode: hide the buttons");
+    fsBtn.setAttribute("aria-label", label);
+    fsBtn.setAttribute("title", fsSupported ? (on ? "Exit fullscreen" : "Fullscreen") : (on ? "Show buttons" : "Focus mode"));
+  }
+  if (fsBtn) {
+    if (!fsSupported) syncFsBtn();   // relabel as focus mode up front
+    fsBtn.addEventListener("click", function () {
+      if (fsSupported) {
+        if (document.fullscreenElement || document.webkitFullscreenElement) {
+          (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+        } else {
+          try {
+            var p = (fsRoot.requestFullscreen || fsRoot.webkitRequestFullscreen).call(fsRoot);
+            if (p && p.catch) p.catch(function () { toast("Fullscreen is not available here 🙈"); });
+          } catch (e) { toast("Fullscreen is not available here 🙈"); }
+        }
+      } else {
+        var on = !appEl.classList.contains("focus-mode");
+        appEl.classList.toggle("focus-mode", on);
+        if (on) toast("Buttons hidden — tap the same spot to bring them back ✨");
+        syncFsBtn();
+      }
+    });
+    document.addEventListener("fullscreenchange", syncFsBtn);
+    document.addEventListener("webkitfullscreenchange", syncFsBtn);
+  }
+
   // Desktop: ctrl/cmd+wheel (and trackpad pinch) zooms at the pointer;
   // plain wheel pans while zoomed in.
   workspace.addEventListener("wheel", function (e) {
@@ -148,7 +195,7 @@
     if (touchPts.size === 2) {
       cancelActiveStroke();
       gestureLock = true;
-      pinch = { d: touchDist(), mid: touchMid() };
+      pinch = { d: touchDist(), mid: touchMid(), t0: Date.now(), moved: 0 };
       try { workspace.setPointerCapture(e.pointerId); } catch (err) { }
     }
   }, true);
@@ -157,6 +204,7 @@
     touchPts.set(e.pointerId, [e.clientX, e.clientY]);
     if (pinch && touchPts.size >= 2) {
       var d = touchDist(), mid = touchMid();
+      pinch.moved += Math.abs(d - pinch.d) + Math.hypot(mid[0] - pinch.mid[0], mid[1] - pinch.mid[1]);
       if (pinch.d > 0) setZoom(zoomF * (d / pinch.d), mid[0], mid[1]);
       panX += mid[0] - pinch.mid[0];
       panY += mid[1] - pinch.mid[1];
@@ -164,10 +212,25 @@
       pinch.d = d; pinch.mid = mid;
     }
   }, true);
+  // Two-finger double-tap (the Procreate family gesture): toggle between
+  // fit-to-screen and a comfy 2.2× zoom. A "tap" is a two-finger touch that
+  // ends quickly without pinching or panning, so it can never paint.
+  var lastTwoTapT = 0;
   function touchEnd(e) {
     if (e.pointerType !== "touch") return;
     touchPts.delete(e.pointerId);
-    if (pinch && touchPts.size < 2) pinch = null;
+    if (pinch && touchPts.size < 2) {
+      if (Date.now() - pinch.t0 < 250 && pinch.moved < 12) {
+        if (Date.now() - lastTwoTapT < 350) {
+          lastTwoTapT = 0;
+          if (zoomF > 1.05) { fitLayout(); resetView(); }
+          else setZoom(2.2, pinch.mid[0], pinch.mid[1]);
+        } else {
+          lastTwoTapT = Date.now();
+        }
+      }
+      pinch = null;
+    }
     if (touchPts.size === 0) gestureLock = false;
   }
   workspace.addEventListener("pointerup", touchEnd, true);
@@ -277,6 +340,27 @@
     toast._t = setTimeout(function () { t.hidden = true; }, 2200);
   }
 
+  // Gentle haptic tick on supported devices (Android); silently absent on iOS.
+  function buzz(pattern) {
+    try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) { }
+  }
+
+  // ---------- quiet chrome: fade the UI while actively coloring ----------
+  // Compact layouts only (phones + phone landscape) — on desktop the chrome
+  // never crowds the artwork, and fading under a mouse feels glitchy.
+  var compactMq = window.matchMedia("(max-width: 900px), (max-height: 520px)");
+  var quietT = null;
+  function quietOn() {
+    if (!compactMq.matches) return;
+    clearTimeout(quietT);
+    appEl.classList.add("ui-quiet");
+  }
+  function quietOff(delay) {
+    clearTimeout(quietT);
+    if (!delay) { appEl.classList.remove("ui-quiet"); return; }
+    quietT = setTimeout(function () { appEl.classList.remove("ui-quiet"); }, delay);
+  }
+
   // ---------- colors: the rail palette is the single color control ----------
   function hexRgb(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; }
 
@@ -311,8 +395,14 @@
   if (popBackdrop) popBackdrop.addEventListener("pointerdown", function (e) {
     e.preventDefault();
     openColorPop(false);
+    openHelp(false);
   });
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape") openColorPop(false); });
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    openColorPop(false);
+    openHelp(false);
+    closeTutorial(true);
+  });
   function updatePreview() {
     var d = Math.min(size, 30);
     previewDot.style.width = d + "px";
@@ -532,6 +622,7 @@
     } catch (e) { return false; }   // can't read pixels? assume there's paint so undo still resets
   }
   undoBtn.addEventListener("click", function () {
+    buzz(8);
     var im = undoStack.pop();
     if (!im) {
       // Out of recorded steps: one last undo resets the page to its fresh,
@@ -556,6 +647,7 @@
     scheduleSave();
   });
   redoBtn.addEventListener("click", function () {
+    buzz(8);
     var im = redoStack.pop();
     if (!im) { toast("Nothing to redo"); updateHistoryButtons(); return; }
     try { undoStack.push(ctx.getImageData(0, 0, W, H)); } catch (e) { }
@@ -574,10 +666,12 @@
       clearBtn.classList.add("armed");
       clearBtn.setAttribute("title", "Tap again to clear");
       toast("Tap the trash again to clear the whole page");
+      buzz([10, 40, 10]);
       clearArmT = setTimeout(disarmClear, 2600);
       return;
     }
     disarmClear();
+    buzz(20);
     clearBtn.setAttribute("title", "Clear canvas");
     pushUndo();
     ctx.fillStyle = "#ffffff";
@@ -607,6 +701,7 @@
     a.click();
     a.remove();
     setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    buzz(12);
     toast("Saved as mochi-paint.png 💾");
   }
   document.getElementById("saveBtn").addEventListener("click", function () {
@@ -1017,18 +1112,22 @@
   // busy state (never a frozen tap), runs the fill, then records ONE undo step
   // (only when something actually changed) and autosaves.
   var filling = false;
+  var FILL_CHEERS = ["Filled! 🪣✨", "Nice! That spot is painted 🪣", "Filled! Looking good 🎨", "Splash! Filled it in 🪣💕"];
+  var fillCheerIdx = 0;
   function doFill(x, y) {
     if (!ready || filling) return;
     filling = true;
     var pre = null;
     try { pre = ctx.getImageData(0, 0, W, H); } catch (e) { pre = null; }
     wrap.classList.add("busy");
+    quietOn();
     setHint("Filling…");
     // two rAFs guarantee the busy cursor/hint is painted before the sync fill
     requestAnimationFrame(function () { requestAnimationFrame(function () {
       var res = floodFill(x, y);
       wrap.classList.remove("busy");
       filling = false;
+      quietOff(600);
       if (res && res.filled > 0) {
         boardDirty = true;
         if (pre) {
@@ -1038,9 +1137,13 @@
         }
         updateHistoryButtons();
         scheduleSave();
-        setHint(res.border
-          ? "Filled! 🪣 (that area was open at the edges — close the gaps to fill just one spot)"
-          : "Filled! 🪣");
+        buzz(12);
+        // Zone fills on a coloring page are always enclosed by construction —
+        // background zones legitimately reach the paper's edge, so no warning.
+        // Only the blank free-draw page can truly flood to the border.
+        setHint(!lineData && res.border
+          ? "Filled all the way to the edge of the paper 🪣"
+          : FILL_CHEERS[fillCheerIdx++ % FILL_CHEERS.length]);
       } else if (res && res.onLine) {
         setHint("That's an outline — tap inside an area to fill it 🪣");
       } else {
@@ -1051,19 +1154,36 @@
 
   // Never start a stroke while a two-finger zoom/pan gesture is active (the
   // workspace's capture-phase pinch handlers run before this one).
+  // Single-finger double-tap: zoom in on that spot; double-tap again to fit.
+  // The first tap paints a dot, so the second tap reverts it via the undo
+  // snapshot before zooming — no stray paint is ever left behind. The fill
+  // tool is exempt (its taps are the tool's whole job).
+  var lastTap = null, strokeT0 = 0;
   board.addEventListener("pointerdown", function (e) {
     if (e.pointerType === "touch" && (gestureLock || pinch)) return;
     if (!ready) { initCanvas(); if (!ready) return; }
     e.preventDefault();
     try { board.setPointerCapture(e.pointerId); } catch (err) { }
     var p = pos(e);
+    if (tool !== "fill" && lastTap && Date.now() - lastTap.t < 300 &&
+        Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 24) {
+      var im = undoStack.pop();   // revert the first tap's dot
+      if (im) { ctx.putImageData(im, 0, 0); updateHistoryButtons(); }
+      lastTap = null;
+      if (zoomF > 1.05) { fitLayout(); resetView(); }
+      else setZoom(2.2, e.clientX, e.clientY);
+      scheduleSave();
+      return;
+    }
     if (tool === "fill") { doFill(p[0], p[1]); return; }   // manages its own undo snapshot
     if (!beginStrokeClip(p)) {
       setHint("That's an outline — start inside an area to color it ✏️");
       return;
     }
     pushUndo();
+    quietOn();
     drawing = true;
+    strokeT0 = Date.now();
     pts = [p];
     if (tool === "crayon") paintThrough(function (g) { crayonSeg(p, p, g); });
     else if (tool === "spray") paintThrough(function (g) { sprayAt(p[0], p[1], g); });
@@ -1089,10 +1209,16 @@
     if (pre) ctx.putImageData(pre, 0, 0);
     updateHistoryButtons();
     drawing = false; pts = []; snap = null;
+    quietOff(350);
   }
   function endStroke(e) {
     if (drawing && e && e.type === "pointercancel") { cancelActiveStroke(); scheduleSave(); return; }
+    // Remember quick taps so a second one can become a double-tap zoom.
+    if (drawing && e && pts.length <= 2 && Date.now() - strokeT0 < 250) {
+      lastTap = { t: Date.now(), x: e.clientX, y: e.clientY };
+    }
     drawing = false; pts = []; snap = null; scheduleSave();
+    quietOff(350);
   }
   board.addEventListener("pointerup", endStroke);
   board.addEventListener("pointercancel", endStroke);
@@ -1121,6 +1247,8 @@
     // Keep the splash up at least briefly so it reads as a moment, not a flicker.
     var wait = Math.max(0, 1100 - (Date.now() - splashShownAt));
     setTimeout(function () { splash.classList.add("done"); }, wait);
+    // First visit ever: run the little welcome tour once the splash is gone.
+    setTimeout(maybeShowTutorial, wait + 600);
   }
   markTool();
   initCanvas();
@@ -1198,7 +1326,7 @@
   boot();
 
   // ---------- left-handed mode ----------
-  var appEl = document.getElementById("app");
+  // (appEl is declared with the other element lookups near the top)
 
   // left-handed preference, persisted locally
   var LH_KEY = "mochi-left-handed";
@@ -1212,6 +1340,89 @@
     var on = !appEl.classList.contains("left-handed");
     applyLeftHanded(on);
     try { localStorage.setItem(LH_KEY, on ? "1" : "0"); } catch (e) { }
+  });
+
+  // ---------- help dialog ----------
+  var helpBtn = document.getElementById("helpBtn");
+  var helpPop = document.getElementById("helpPop");
+  var helpCloseBtn = document.getElementById("helpCloseBtn");
+  var tutorialReplayBtn = document.getElementById("tutorialReplayBtn");
+  function openHelp(open) {
+    if (!helpPop) return;
+    var wasOpen = !helpPop.hidden;
+    if (open === wasOpen) return;
+    helpPop.hidden = !open;
+    helpPop.classList.toggle("open", open);
+    if (popBackdrop) popBackdrop.hidden = !open;
+    if (helpBtn) helpBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) {
+      if (helpCloseBtn) helpCloseBtn.focus({ preventScroll: true });
+    } else if (helpBtn) {
+      helpBtn.focus({ preventScroll: true });
+    }
+  }
+  if (helpBtn) helpBtn.addEventListener("click", function () {
+    var isOpen = helpPop && !helpPop.hidden;
+    openColorPop(false);
+    openHelp(!isOpen);
+  });
+  if (helpCloseBtn) helpCloseBtn.addEventListener("click", function () { openHelp(false); });
+
+  // ---------- first-visit tutorial ----------
+  var TUT_KEY = "mochi-tutorial-done";
+  var tutorialEl = document.getElementById("tutorial");
+  var tutArt = document.getElementById("tutArt");
+  var tutTitle = document.getElementById("tutTitle");
+  var tutBody = document.getElementById("tutBody");
+  var tutDots = document.getElementById("tutDots");
+  var tutSkip = document.getElementById("tutSkip");
+  var tutNext = document.getElementById("tutNext");
+  var TUT_STEPS = [
+    { art: "🖌️", title: "Pick a tool", body: "Tap a tool to draw — pencil, marker, crayon, spray, or eraser. Your paint always stays inside the lines!" },
+    { art: "🪣", title: "Tap to fill", body: "Grab the paint can, tap inside any shape, and it fills with your color — splash!" },
+    { art: "🤏", title: "Zoom and move", body: "Pinch with two fingers to zoom in close, drag with two fingers to look around. Double-tap to zoom — double-tap again to see it all." },
+    { art: "💾", title: "No mistakes here", body: "Undo fixes anything, all the way back to a fresh page. Save keeps your masterpiece when it's done!" }
+  ];
+  var tutIdx = 0;
+  function renderTut() {
+    var s = TUT_STEPS[tutIdx];
+    if (tutArt) tutArt.textContent = s.art;
+    if (tutTitle) tutTitle.textContent = s.title;
+    if (tutBody) tutBody.textContent = s.body;
+    if (tutDots) [].forEach.call(tutDots.children, function (d, i) {
+      d.classList.toggle("on", i === tutIdx);
+    });
+    if (tutNext) tutNext.textContent = tutIdx === TUT_STEPS.length - 1 ? "Let's paint! 🎨" : "Next";
+  }
+  function showTutorial() {
+    if (!tutorialEl) return;
+    if (tutDots && !tutDots.children.length) {
+      TUT_STEPS.forEach(function () { tutDots.appendChild(document.createElement("i")); });
+    }
+    tutIdx = 0;
+    renderTut();
+    tutorialEl.hidden = false;
+    if (tutNext) tutNext.focus({ preventScroll: true });
+  }
+  function closeTutorial(quiet) {
+    if (!tutorialEl || tutorialEl.hidden) return;
+    tutorialEl.hidden = true;
+    try { localStorage.setItem(TUT_KEY, "1"); } catch (e) { }
+    if (!quiet) toast("Have fun! Tap Help any time for a reminder 🍡");
+  }
+  function maybeShowTutorial() {
+    var done = "1";
+    try { done = localStorage.getItem(TUT_KEY); } catch (e) { }
+    if (!done) showTutorial();
+  }
+  if (tutSkip) tutSkip.addEventListener("click", function () { closeTutorial(true); });
+  if (tutNext) tutNext.addEventListener("click", function () {
+    if (tutIdx < TUT_STEPS.length - 1) { tutIdx++; renderTut(); }
+    else closeTutorial();
+  });
+  if (tutorialReplayBtn) tutorialReplayBtn.addEventListener("click", function () {
+    openHelp(false);
+    showTutorial();
   });
 
   // ---------- PWA: offline support (production only, keeps local dev simple) ----------
