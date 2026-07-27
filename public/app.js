@@ -6,7 +6,10 @@
   var ctx = board.getContext("2d");
   var lines = document.getElementById("lines");
   var lctx = lines.getContext("2d");
-  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  // Full device resolution (3× on modern phones) so lines and fills render
+  // crisp. The bigger backing store's memory cost is offset by the smaller
+  // undo depth and the zone-mask LRU below.
+  var dpr = Math.min(window.devicePixelRatio || 1, 3);
   var W = 0, H = 0, ready = false;
 
   function initCanvas() {
@@ -22,6 +25,49 @@
     drawPage();
   }
 
+  // Where the artwork lands on a w×h canvas — the same math drawPage uses.
+  // Rotation, layout changes, and progress restores all remap paint through
+  // this rectangle so color stays aligned with the line art (a plain
+  // full-canvas stretch would distort the paint whenever the canvas aspect
+  // changes, e.g. rotating the phone).
+  function artRect(w, h) {
+    if (pageImg) {
+      var m = Math.min(w, h) * 0.04;
+      var sc = Math.min((w - 2 * m) / pageImg.width, (h - 2 * m) / pageImg.height);
+      var dw = pageImg.width * sc, dh = pageImg.height * sc;
+      return { x: (w - dw) / 2, y: (h - dh) / 2, w: dw, h: dh };
+    }
+    if (pageFn) {
+      // procedural pals render centered at scale min(w,h)*0.46
+      var side = Math.min(w, h) * 0.92;
+      return { x: (w - side) / 2, y: (h - side) / 2, w: side, h: side };
+    }
+    return { x: 0, y: 0, w: w, h: h };
+  }
+  // Draw a snapshot (canvas or image) of oldW×oldH onto the current board,
+  // uniformly scaled and positioned so its art rectangle lands centered on
+  // today's. The scale uses the SMALLER of the two axis ratios: for coloring
+  // pages both ratios are equal (both rects contain-fit the same image), and
+  // on the blank page — where the "art rect" is the whole canvas and the two
+  // aspects can differ after a rotation — the min keeps every painted pixel
+  // on the canvas instead of cropping the bottom half away.
+  function remapPaint(src, oldW, oldH) {
+    // Blank page: no artwork to anchor to, so stretch edge-to-edge. The
+    // momentary aspect distortion reverses exactly on the next rotation —
+    // a uniform contain-fit here would instead SHRINK the doodle a little
+    // more on every rotation, which never comes back.
+    if (!pageImg && !pageFn) {
+      ctx.drawImage(src, 0, 0, oldW, oldH, 0, 0, W, H);
+      return;
+    }
+    var a = artRect(oldW, oldH), b = artRect(W, H);
+    if (a.w <= 0 || a.h <= 0) return;
+    var s = Math.min(b.w / a.w, b.h / a.h);
+    var tx = b.x + b.w / 2 - (a.x + a.w / 2) * s;
+    var ty = b.y + b.h / 2 - (a.y + a.h / 2) * s;
+    ctx.drawImage(src, 0, 0, oldW, oldH, tx, ty, oldW * s, oldH * s);
+  }
+
   if (window.ResizeObserver) {
     new ResizeObserver(function () {
       if (!ready) return;
@@ -32,14 +78,13 @@
         var old = document.createElement("canvas");
         old.width = W; old.height = H;
         old.getContext("2d").drawImage(board, 0, 0);
+        var oldW = W, oldH = H;
         W = nw; H = nh;
         board.width = W; board.height = H;
         lines.width = W; lines.height = H;
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, W, H);
-        // Scale the paint to the new size so it stays aligned with the
-        // vector line art, which re-renders at the new scale.
-        ctx.drawImage(old, 0, 0, old.width, old.height, 0, 0, W, H);
+        remapPaint(old, oldW, oldH);
         drawPage();
       }
     }).observe(board);
@@ -88,19 +133,15 @@
   }
   function resetView() { zoomF = 1; panX = 0; panY = 0; applyView(); }
 
-  // contain-fit the page card inside the visible workspace
+  // The page card fills the whole workspace — edge-to-edge white paper with
+  // the artwork centered on it (drawPage handles the centering), like the
+  // best kids' coloring apps. No lavender letterboxing around a small card.
   function fitLayout() {
     if (!workspace) return;
     var aw = workspace.clientWidth, ah = workspace.clientHeight;
     if (aw < 50 || ah < 50) return;
-    var w = aw, h = ah;
-    if (pageImg) {
-      var s = Math.min(aw / pageImg.width, ah / pageImg.height);
-      w = Math.max(50, Math.round(pageImg.width * s));
-      h = Math.max(50, Math.round(pageImg.height * s));
-    }
-    wrapEl.style.width = w + "px";
-    wrapEl.style.height = h + "px";
+    wrapEl.style.width = aw + "px";
+    wrapEl.style.height = ah + "px";
   }
   // Refit when the viewport, rotation, or mobile browser chrome changes the
   // visible area (Visual Viewport API when available, with fallbacks).
@@ -330,7 +371,21 @@
     fill: "Paint can selected — tap an area to fill it (it stays inside the lines!)",
     eraser: "Eraser selected — cleans up paint but never the outlines"
   };
-  function setHint(t) { hint.textContent = t; }
+  // Hints announce, then get out of the way: after a few seconds the pill
+  // fades so it never sits over the artwork. Any new message re-shows it.
+  function setHint(t) {
+    hint.textContent = t;
+    hint.classList.remove("idle");
+    clearTimeout(setHint._t);
+    setHint._t = setTimeout(function () { hint.classList.add("idle"); }, 4500);
+  }
+
+  // iOS Safari ignores user-scalable=no, so a pinch that lands on the
+  // toolbars would browser-zoom the whole studio and leave it stuck that
+  // way. GestureEvents fire only for that page-level pinch (canvas pinch
+  // uses pointer events), so cancelling them blocks exactly the bad case.
+  document.addEventListener("gesturestart", function (e) { e.preventDefault(); }, { passive: false });
+  document.addEventListener("gesturechange", function (e) { e.preventDefault(); }, { passive: false });
 
   function toast(msg) {
     var t = document.getElementById("toast");
@@ -548,7 +603,10 @@
             return;
           }
           if (boardDirty) return;   // fresh strokes beat a late restore
-          ctx.drawImage(img, 0, 0, W, H);
+          // Saves can come from a different canvas size/aspect (other
+          // orientation, older layout) — remap through the art rectangle
+          // so restored color lands exactly on the line art.
+          remapPaint(img, img.width, img.height);
           boardDirty = true;   // restored paint has no in-session history, but the
           updateHistoryButtons();   // undo button can still reset to a fresh page
         };
@@ -573,15 +631,23 @@
       var s = Math.min(W, H) * 0.46;
       withChar(lctx, W / 2, H / 2, s, pageFn, true);
     }
-    // Punch out the white construction fills so only the outlines remain —
-    // paint on the board layer below must show through the page interior.
-    // The threshold is generous (≥236 on every channel): source art has
-    // near-white speckles like rgb(245,245,244) that a strict 255-only test
-    // leaves opaque on this TOP layer, where they occlude fills below as
-    // white grain.
+    // Convert the drawn page into a clean line-art overlay: white paper
+    // becomes fully transparent, dark outline ink stays opaque, and the
+    // anti-aliased gray fringe becomes SEMI-transparent so it blends over
+    // whatever color sits below. The old binary punch-out (transparent only
+    // when every channel was ≥236) left every AA gray and near-white noise
+    // pixel opaque on this TOP layer — that was the white/gray grain and the
+    // halos around outlines whenever color was filled underneath.
     var img = lctx.getImageData(0, 0, W, H), d = img.data;
+    var LUM_PAPER = 242, LUM_INK = 130, LUM_SPAN = LUM_PAPER - LUM_INK;
     for (var i = 0; i < d.length; i += 4) {
-      if (d[i + 3] > 0 && d[i] > 235 && d[i + 1] > 235 && d[i + 2] > 235) d[i + 3] = 0;
+      var a = d[i + 3];
+      if (!a) continue;
+      var lum = (d[i] * 77 + d[i + 1] * 151 + d[i + 2] * 28) >> 8;
+      var ink = lum >= LUM_PAPER ? 0
+        : lum <= LUM_INK ? 255
+        : ((LUM_PAPER - lum) * 255 / LUM_SPAN) | 0;
+      d[i + 3] = a === 255 ? ink : (ink * a / 255) | 0;
     }
     lctx.putImageData(img, 0, 0);
     lineData = d;
@@ -607,7 +673,9 @@
     boardDirty = true;
     try {
       undoStack.push(ctx.getImageData(0, 0, W, H));
-      if (undoStack.length > 15) undoStack.shift();
+      // 10 deep: snapshots are full-resolution ImageData, and the dpr-3
+      // backing store makes each one ~3× bigger than the old cap assumed.
+      if (undoStack.length > 10) undoStack.shift();
       redoStack = [];
     } catch (e) { }
     updateHistoryButtons();
@@ -826,7 +894,10 @@
     ],
     panpan: [
       // panda: body/face + ear rings/inners + cheeks + nose + mouth + feet
-      [[509, 779], [318, 347], [329, 375], [725, 349], [715, 375], [306, 656], [736, 653], [520, 644], [519, 699], [309, 1100], [724, 1100]],
+      // (ring points sit on the annulus band at the top of each ear — the
+      // earlier coordinates landed inside the inner discs, so the rings
+      // stayed white after a one-tap panda fill)
+      [[509, 779], [325, 290], [329, 375], [720, 292], [715, 375], [306, 656], [736, 653], [520, 644], [519, 699], [309, 1100], [724, 1100]],
       // bamboo stick in paw
       [[577, 953], [479, 1044], [520, 1006], [437, 1081], [654, 876], [631, 901]]
     ],
@@ -934,8 +1005,15 @@
   // a few pixels of bleed INTO the outline ink only, so antialiasing can't
   // expose white seams. The bleed never crosses into another open region.
   function zoneMask(zid) {
-    var cached = zoneMasks["z" + zid];
-    if (cached) return cached;
+    var lru = zoneMasks._lru || (zoneMasks._lru = []);
+    var key = "z" + zid;
+    var cached = zoneMasks[key];
+    if (cached) {
+      var at = lru.indexOf(key);
+      if (at >= 0) lru.splice(at, 1);
+      lru.push(key);
+      return cached;
+    }
     var bits = new Uint8Array(W * H);
     var filled = 0;
     for (var i = 0; i < W * H; i++) {
@@ -943,18 +1021,31 @@
       if (l && zoneIds[l] === zid) { bits[i] = 1; filled++; }
     }
     var R = Math.max(2, Math.round(W / 400));
-    for (var pass = 0; pass < R; pass++) {
-      var grown = [];
-      for (var yy = 0; yy < H; yy++) {
-        var row = yy * W;
-        for (var xx = 0; xx < W; xx++) {
-          var j = row + xx;
-          if (bits[j] || lineData[j * 4 + 3] <= 60) continue;   // bleed into ink only
-          if ((xx > 0 && bits[j - 1]) || (xx < W - 1 && bits[j + 1]) ||
-              (yy > 0 && bits[j - W]) || (yy < H - 1 && bits[j + W])) grown.push(j);
-        }
+    // First bleed ring needs one full scan; later rings grow only from the
+    // previous ring's pixels — the thin frontier — instead of rescanning the
+    // whole canvas each pass. Cuts the cold cost of a first tap on a zone
+    // roughly in half at dpr-3 resolutions.
+    var frontier = [];
+    for (var yy = 0; yy < H; yy++) {
+      var row = yy * W;
+      for (var xx = 0; xx < W; xx++) {
+        var j = row + xx;
+        if (bits[j] || lineData[j * 4 + 3] <= 60) continue;   // bleed into ink only
+        if ((xx > 0 && bits[j - 1]) || (xx < W - 1 && bits[j + 1]) ||
+            (yy > 0 && bits[j - W]) || (yy < H - 1 && bits[j + W])) frontier.push(j);
       }
-      for (var g = 0; g < grown.length; g++) bits[grown[g]] = 1;
+    }
+    for (var f = 0; f < frontier.length; f++) bits[frontier[f]] = 1;
+    for (var pass = 1; pass < R && frontier.length; pass++) {
+      var next = [];
+      for (var q = 0; q < frontier.length; q++) {
+        var j2 = frontier[q], xx2 = j2 % W, yy2 = (j2 / W) | 0, n;
+        if (xx2 > 0) { n = j2 - 1; if (!bits[n] && lineData[n * 4 + 3] > 60) { bits[n] = 1; next.push(n); } }
+        if (xx2 < W - 1) { n = j2 + 1; if (!bits[n] && lineData[n * 4 + 3] > 60) { bits[n] = 1; next.push(n); } }
+        if (yy2 > 0) { n = j2 - W; if (!bits[n] && lineData[n * 4 + 3] > 60) { bits[n] = 1; next.push(n); } }
+        if (yy2 < H - 1) { n = j2 + W; if (!bits[n] && lineData[n * 4 + 3] > 60) { bits[n] = 1; next.push(n); } }
+      }
+      frontier = next;
     }
     var img = ctx.createImageData(W, H), od = img.data;
     for (var b = 0; b < bits.length; b++) if (bits[b]) od[b * 4 + 3] = 255;
@@ -962,7 +1053,11 @@
     c.width = W; c.height = H;
     c.getContext("2d").putImageData(img, 0, 0);
     var mask = { bits: bits, canvas: c, filled: filled, border: !!zoneMasks.borderZones[zid] };
-    zoneMasks["z" + zid] = mask;
+    zoneMasks[key] = mask;
+    // Each cached mask holds a full-canvas bitmap + canvas (~15MB at dpr 3
+    // on a phone), so keep only the few most recently used zones.
+    lru.push(key);
+    if (lru.length > 4) delete zoneMasks[lru.shift()];
     return mask;
   }
   function zoneAt(x, y) {
@@ -1132,7 +1227,7 @@
         boardDirty = true;
         if (pre) {
           undoStack.push(pre);
-          if (undoStack.length > 15) undoStack.shift();
+          if (undoStack.length > 10) undoStack.shift();
           redoStack = [];
         }
         updateHistoryButtons();
@@ -1154,27 +1249,15 @@
 
   // Never start a stroke while a two-finger zoom/pan gesture is active (the
   // workspace's capture-phase pinch handlers run before this one).
-  // Single-finger double-tap: zoom in on that spot; double-tap again to fit.
-  // The first tap paints a dot, so the second tap reverts it via the undo
-  // snapshot before zooming — no stray paint is ever left behind. The fill
-  // tool is exempt (its taps are the tool's whole job).
-  var lastTap = null, strokeT0 = 0;
+  // One finger ALWAYS draws — never zooms. Zooming is strictly two-finger
+  // (pinch, two-finger double-tap) or the buttons, so a kid tapping fast
+  // can never accidentally fling the page into a zoom.
   board.addEventListener("pointerdown", function (e) {
     if (e.pointerType === "touch" && (gestureLock || pinch)) return;
     if (!ready) { initCanvas(); if (!ready) return; }
     e.preventDefault();
     try { board.setPointerCapture(e.pointerId); } catch (err) { }
     var p = pos(e);
-    if (tool !== "fill" && lastTap && Date.now() - lastTap.t < 300 &&
-        Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 24) {
-      var im = undoStack.pop();   // revert the first tap's dot
-      if (im) { ctx.putImageData(im, 0, 0); updateHistoryButtons(); }
-      lastTap = null;
-      if (zoomF > 1.05) { fitLayout(); resetView(); }
-      else setZoom(2.2, e.clientX, e.clientY);
-      scheduleSave();
-      return;
-    }
     if (tool === "fill") { doFill(p[0], p[1]); return; }   // manages its own undo snapshot
     if (!beginStrokeClip(p)) {
       setHint("That's an outline — start inside an area to color it ✏️");
@@ -1183,23 +1266,44 @@
     pushUndo();
     quietOn();
     drawing = true;
-    strokeT0 = Date.now();
     pts = [p];
     if (tool === "crayon") paintThrough(function (g) { crayonSeg(p, p, g); });
     else if (tool === "spray") paintThrough(function (g) { sprayAt(p[0], p[1], g); });
     else if (tool === "marker") { snap = ctx.getImageData(0, 0, W, H); markerPath(); }
     else paintThrough(function (g) { seg(p, [p[0] + 0.1, p[1]], g); });
   });
+  // Batch pointer moves into one draw per animation frame: fast fingers fire
+  // far more move events than screen frames, and the marker re-renders its
+  // whole path on every update — flushing once per frame keeps coloring at
+  // 60fps without changing what ends up on the page.
+  var moveQ = [], moveRaf = 0;
+  function flushMoves() {
+    if (moveRaf) { cancelAnimationFrame(moveRaf); moveRaf = 0; }
+    if (!drawing || !moveQ.length) { moveQ.length = 0; return; }
+    var q = moveQ; moveQ = [];
+    if (tool === "marker") {
+      for (var m = 0; m < q.length; m++) pts.push(q[m]);
+      markerPath();
+      return;
+    }
+    for (var i = 0; i < q.length; i++) {
+      var p = q[i], last = pts[pts.length - 1];
+      pts.push(p);
+      // drawFn runs synchronously inside paintThrough, so capturing the
+      // loop variables here is safe.
+      if (tool === "crayon") paintThrough(function (g) { crayonSeg(last, p, g); });
+      else if (tool === "spray") paintThrough(function (g) { sprayAt(p[0], p[1], g); });
+      else paintThrough(function (g) { seg(last, p, g); });
+    }
+  }
   board.addEventListener("pointermove", function (e) {
     updateRing(e);
     if (!drawing) return;
-    var p = pos(e), last = pts[pts.length - 1];
+    var p = pos(e);
+    var last = moveQ.length ? moveQ[moveQ.length - 1] : pts[pts.length - 1];
     if (Math.hypot(p[0] - last[0], p[1] - last[1]) < 1.5 * dpr) return;
-    pts.push(p);
-    if (tool === "crayon") paintThrough(function (g) { crayonSeg(last, p, g); });
-    else if (tool === "spray") paintThrough(function (g) { sprayAt(p[0], p[1], g); });
-    else if (tool === "marker") markerPath();
-    else paintThrough(function (g) { seg(last, p, g); });
+    moveQ.push(p);
+    if (!moveRaf) moveRaf = requestAnimationFrame(flushMoves);
   });
   // Revert a stroke in progress (second finger landed, or the pointer was
   // cancelled) so a pinch never leaves a stray dot or line behind.
@@ -1208,15 +1312,12 @@
     var pre = undoStack.pop();
     if (pre) ctx.putImageData(pre, 0, 0);
     updateHistoryButtons();
-    drawing = false; pts = []; snap = null;
+    drawing = false; pts = []; snap = null; moveQ.length = 0;
     quietOff(350);
   }
   function endStroke(e) {
     if (drawing && e && e.type === "pointercancel") { cancelActiveStroke(); scheduleSave(); return; }
-    // Remember quick taps so a second one can become a double-tap zoom.
-    if (drawing && e && pts.length <= 2 && Date.now() - strokeT0 < 250) {
-      lastTap = { t: Date.now(), x: e.clientX, y: e.clientY };
-    }
+    flushMoves();
     drawing = false; pts = []; snap = null; scheduleSave();
     quietOff(350);
   }
@@ -1380,7 +1481,7 @@
   var TUT_STEPS = [
     { art: "🖌️", title: "Pick a tool", body: "Tap a tool to draw — pencil, marker, crayon, spray, or eraser. Your paint always stays inside the lines!" },
     { art: "🪣", title: "Tap to fill", body: "Grab the paint can, tap inside any shape, and it fills with your color — splash!" },
-    { art: "🤏", title: "Zoom and move", body: "Pinch with two fingers to zoom in close, drag with two fingers to look around. Double-tap to zoom — double-tap again to see it all." },
+    { art: "🤏", title: "Zoom and move", body: "Pinch with two fingers to zoom in close, drag with two fingers to look around. Double-tap with two fingers to zoom — again to see it all." },
     { art: "💾", title: "No mistakes here", body: "Undo fixes anything, all the way back to a fresh page. Save keeps your masterpiece when it's done!" }
   ];
   var tutIdx = 0;

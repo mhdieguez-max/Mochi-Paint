@@ -200,10 +200,15 @@ button,a,input,.logo{touch-action:manipulation}
   font-size:12px;font-weight:600;color:var(--ink);background:#fff;
   padding:8px 16px;border-radius:999px;box-shadow:var(--shadow-btn);
   pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* hints announce, then fade away so they never sit over the artwork */
+.hint.idle{opacity:0}
 
+/* pointer-events:none — the toast is informational and floats over the
+   bottom-center zoom row on phones; it must never swallow their taps */
 #toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);
   background:#fff;color:var(--pink);font-size:13px;font-weight:600;padding:12px 20px;border-radius:16px;
-  box-shadow:0 4px 16px rgba(200,160,220,.35);z-index:50;max-width:90vw;text-align:center}
+  box-shadow:0 4px 16px rgba(200,160,220,.35);z-index:50;max-width:90vw;text-align:center;
+  pointer-events:none}
 
 /* ---------- left-handed mode: mirror the stage ---------- */
 #app.left-handed .stage{flex-direction:row-reverse}
@@ -333,7 +338,9 @@ button,a,input,.logo{touch-action:manipulation}
   /* finger-sized swatches on phones */
   .rail-colors{grid-template-columns:repeat(4,48px);gap:8px}
   .qsw{width:44px}
-  .zoomctl{right:8px;bottom:8px;gap:6px}
+  /* zoom cluster: one horizontal row hugging the bottom edge, out of the
+     middle of the artwork; it also fades while actively coloring */
+  .zoomctl{flex-direction:row;right:auto;left:50%;transform:translateX(-50%);bottom:6px;gap:6px}
   .hint{font-size:11px;padding:7px 13px}
 }
 
