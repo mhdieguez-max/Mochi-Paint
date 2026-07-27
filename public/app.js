@@ -1478,16 +1478,22 @@
   var tutDots = document.getElementById("tutDots");
   var tutSkip = document.getElementById("tutSkip");
   var tutNext = document.getElementById("tutNext");
+  // Card art clones the real toolbar icons (artSel) so the tutorial always
+  // matches what kids see in the app; art is the emoji fallback for gestures.
   var TUT_STEPS = [
-    { art: "🖌️", title: "Pick a tool", body: "Tap a tool to draw — pencil, marker, crayon, spray, or eraser. Your paint always stays inside the lines!" },
-    { art: "🪣", title: "Tap to fill", body: "Grab the paint can, tap inside any shape, and it fills with your color — splash!" },
+    { artSel: '[data-tool="pencil"] svg', art: "🖌️", title: "Pick a tool", body: "Tap a tool to draw — pencil, marker, crayon, spray, or eraser. Your paint always stays inside the lines!" },
+    { artSel: '[data-tool="fill"] svg', art: "🪣", title: "Tap to fill", body: "Grab the paint can, tap inside any shape, and it fills with your color — splash!" },
     { art: "🤏", title: "Zoom and move", body: "Pinch with two fingers to zoom in close, drag with two fingers to look around. Double-tap with two fingers to zoom — again to see it all." },
-    { art: "💾", title: "No mistakes here", body: "Undo fixes anything, all the way back to a fresh page. Save keeps your masterpiece when it's done!" }
+    { artSel: "#undoBtn svg", art: "💾", title: "No mistakes here", body: "Undo fixes anything, all the way back to a fresh page. Save keeps your masterpiece when it's done!" }
   ];
   var tutIdx = 0;
   function renderTut() {
     var s = TUT_STEPS[tutIdx];
-    if (tutArt) tutArt.textContent = s.art;
+    if (tutArt) {
+      var artSrc = s.artSel ? document.querySelector(s.artSel) : null;
+      tutArt.textContent = artSrc ? "" : s.art;
+      if (artSrc) tutArt.appendChild(artSrc.cloneNode(true));
+    }
     if (tutTitle) tutTitle.textContent = s.title;
     if (tutBody) tutBody.textContent = s.body;
     if (tutDots) [].forEach.call(tutDots.children, function (d, i) {
