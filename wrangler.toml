@@ -4,3 +4,8 @@ compatibility_date = "2026-07-02"
 [assets]
 directory = "./public"
 not_found_handling = "single-page-application"
+
+# The workers.dev subdomain contains the account name; mochipaint.com is the
+# only public host. Preview URLs stay off for the same reason.
+workers_dev = false
+preview_urls = false
