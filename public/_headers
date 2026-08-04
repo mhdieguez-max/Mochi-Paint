@@ -1,0 +1,26 @@
+# Route HTML must never be cached at the CDN edge: a cached copy of "/"
+# served a three-day-old build (old splash, old save format) to every
+# visitor while the underlying assets were already updated. The service
+# worker handles offline copies; the edge should always revalidate HTML.
+/
+  Cache-Control: no-store
+/index.html
+  Cache-Control: no-store
+/home
+  Cache-Control: no-store
+/home.html
+  Cache-Control: no-store
+/theme
+  Cache-Control: no-store
+/theme.html
+  Cache-Control: no-store
+/forest-kawaii
+  Cache-Control: no-store
+/forest-kawaii.html
+  Cache-Control: no-store
+/privacy.html
+  Cache-Control: no-store
+/data-deletion.html
+  Cache-Control: no-store
+/sw.js
+  Cache-Control: no-store

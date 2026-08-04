@@ -3,7 +3,9 @@
 // offline (a Play Store requirement — never show a browser error page).
 // Runtime strategy stays network-first: fresh files whenever online, cached
 // copy when the network is gone.
-var CACHE = "mochi-paint-v26";
+// v32: landscape-first studio (manifest lock + rotate gate) —
+// the version bump drops every stale runtime-cached copy on activate.
+var CACHE = "mochi-paint-v32";
 var CORE = [
   "/",
   "/home",
@@ -27,10 +29,21 @@ var CORE = [
   "/fonts/nunito-latin.woff2",
   "/fonts/quicksand-latin.woff2",
   "/manifest.webmanifest",
+  "/favicon.ico",
+  "/icon-16.png",
+  "/icon-32.png",
+  "/icon-180.png",
+  "/apple-touch-icon.png",
   "/icon-192.png",
   "/icon-512.png",
   "/icon-512-maskable.png",
   "/hero-pals.png",
+  "/splash/scene-base.png",
+  "/splash/chick-wing.png",
+  "/splash/bear-arm.png",
+  "/splash/fox-tail.png",
+  "/splash/polar-paw.png",
+  "/splash/panda-brush.png",
   "/coloring-pages/meadow/usagi-bunny.png",
   "/coloring-pages/meadow/previews/usagi-bunny-color.png"
 ];

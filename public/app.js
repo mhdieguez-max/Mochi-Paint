@@ -12,6 +12,16 @@
   var dpr = Math.min(window.devicePixelRatio || 1, 3);
   var W = 0, H = 0, ready = false;
 
+  // Resizing a canvas resets its context state, so re-request the best
+  // resampling filter every time the backing store changes — the page PNG
+  // and paint snapshots are rescaled through these contexts, and the default
+  // low-quality filter added its own stair-step artifacts to the line art.
+  function primeContexts() {
+    ctx.imageSmoothingEnabled = true;
+    lctx.imageSmoothingEnabled = true;
+    try { ctx.imageSmoothingQuality = "high"; lctx.imageSmoothingQuality = "high"; } catch (e) { }
+  }
+
   function initCanvas() {
     var r = board.getBoundingClientRect();
     if (r.width < 50 || r.height < 50) { requestAnimationFrame(initCanvas); return; }
@@ -19,23 +29,71 @@
     H = Math.round(r.height * dpr);
     board.width = W; board.height = H;
     lines.width = W; lines.height = H;
+    primeContexts();
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, W, H);
     ready = true;
     drawPage();
   }
 
+  // Meaningful ink/content bounds of an image-based page: the tight box
+  // around every pixel dark enough to read as line art (same LUM_PAPER
+  // threshold drawPage uses), padded a little so strokes never kiss the
+  // canvas edge. The source PNGs ship with baked-in white margins — fitting
+  // THIS box instead of the whole bitmap is what lets landscape layouts use
+  // the screen properly. Computed once per image and cached on it.
+  function inkRect(img) {
+    if (img._ink) return img._ink;
+    var iw = img.width, ih = img.height, r = null;
+    try {
+      var c = document.createElement("canvas");
+      c.width = iw; c.height = ih;
+      var g = c.getContext("2d", { willReadFrequently: true });
+      g.drawImage(img, 0, 0);
+      var d = g.getImageData(0, 0, iw, ih).data;
+      var x0 = iw, y0 = ih, x1 = -1, y1 = -1;
+      for (var y = 0; y < ih; y++) {
+        for (var x = 0; x < iw; x++) {
+          var i = (y * iw + x) * 4;
+          if (d[i + 3] < 40) continue;
+          var lum = (d[i] * 77 + d[i + 1] * 151 + d[i + 2] * 28) >> 8;
+          if (lum >= 242) continue;
+          if (x < x0) x0 = x;
+          if (x > x1) x1 = x;
+          if (y < y0) y0 = y;
+          if (y > y1) y1 = y;
+        }
+      }
+      if (x1 >= x0 && y1 >= y0) {
+        var pad = Math.round(Math.max(iw, ih) * 0.012);
+        x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad);
+        x1 = Math.min(iw - 1, x1 + pad); y1 = Math.min(ih - 1, y1 + pad);
+        r = { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+      }
+    } catch (e) { }
+    img._ink = r || { x: 0, y: 0, w: iw, h: ih };
+    return img._ink;
+  }
+
   // Where the artwork lands on a w×h canvas — the same math drawPage uses.
   // Rotation, layout changes, and progress restores all remap paint through
   // this rectangle so color stays aligned with the line art (a plain
   // full-canvas stretch would distort the paint whenever the canvas aspect
-  // changes, e.g. rotating the phone).
+  // changes, e.g. rotating the phone). Image pages contain-fit their INK
+  // bounds (never stretched, never cropping authored content); the returned
+  // rectangle is still the full bitmap's draw rect so every consumer —
+  // drawPage, zone mapping, remapPaint — shares one placement.
   function artRect(w, h) {
     if (pageImg) {
+      var ink = inkRect(pageImg);
       var m = Math.min(w, h) * 0.04;
-      var sc = Math.min((w - 2 * m) / pageImg.width, (h - 2 * m) / pageImg.height);
-      var dw = pageImg.width * sc, dh = pageImg.height * sc;
-      return { x: (w - dw) / 2, y: (h - dh) / 2, w: dw, h: dh };
+      var sc = Math.min((w - 2 * m) / ink.w, (h - 2 * m) / ink.h);
+      return {
+        x: w / 2 - (ink.x + ink.w / 2) * sc,
+        y: h / 2 - (ink.y + ink.h / 2) * sc,
+        w: pageImg.width * sc,
+        h: pageImg.height * sc
+      };
     }
     if (pageFn) {
       // procedural pals render centered at scale min(w,h)*0.46
@@ -44,6 +102,19 @@
     }
     return { x: 0, y: 0, w: w, h: h };
   }
+  // Placement math of app versions before the ink-bounds fit (whole bitmap
+  // contain-fit with a 4% margin). Saves recorded by those versions carry no
+  // format marker; restoring them maps paint out of THIS rectangle so old
+  // artwork still lands exactly on the line art.
+  function artRectLegacy(w, h) {
+    if (pageImg) {
+      var m = Math.min(w, h) * 0.04;
+      var sc = Math.min((w - 2 * m) / pageImg.width, (h - 2 * m) / pageImg.height);
+      var dw = pageImg.width * sc, dh = pageImg.height * sc;
+      return { x: (w - dw) / 2, y: (h - dh) / 2, w: dw, h: dh };
+    }
+    return artRect(w, h);
+  }
   // Draw a snapshot (canvas or image) of oldW×oldH onto the current board,
   // uniformly scaled and positioned so its art rectangle lands centered on
   // today's. The scale uses the SMALLER of the two axis ratios: for coloring
@@ -51,7 +122,7 @@
   // on the blank page — where the "art rect" is the whole canvas and the two
   // aspects can differ after a rotation — the min keeps every painted pixel
   // on the canvas instead of cropping the bottom half away.
-  function remapPaint(src, oldW, oldH) {
+  function remapPaint(src, oldW, oldH, srcRect) {
     // Blank page: no artwork to anchor to, so stretch edge-to-edge. The
     // momentary aspect distortion reverses exactly on the next rotation —
     // a uniform contain-fit here would instead SHRINK the doodle a little
@@ -60,7 +131,7 @@
       ctx.drawImage(src, 0, 0, oldW, oldH, 0, 0, W, H);
       return;
     }
-    var a = artRect(oldW, oldH), b = artRect(W, H);
+    var a = srcRect || artRect(oldW, oldH), b = artRect(W, H);
     if (a.w <= 0 || a.h <= 0) return;
     var s = Math.min(b.w / a.w, b.h / a.h);
     var tx = b.x + b.w / 2 - (a.x + a.w / 2) * s;
@@ -82,6 +153,7 @@
         W = nw; H = nh;
         board.width = W; board.height = H;
         lines.width = W; lines.height = H;
+        primeContexts();
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, W, H);
         remapPaint(old, oldW, oldH);
@@ -568,13 +640,22 @@
       var slug = currentSlug;
       board.toBlob(function (blob) {
         if (!blob) return;
-        saveDbPut(slug, blob).then(function (ok) {
+        // fmt 2 = painted under the ink-bounds artRect. Legacy records (a
+        // bare Blob / no localStorage marker) predate it and restore through
+        // artRectLegacy so old paint still lands exactly on the outlines.
+        saveDbPut(slug, { fmt: 2, blob: blob }).then(function (ok) {
           if (ok) {
             // IndexedDB is now the source of truth — free the quota-hungry
             // dataURL copy an older version may have left behind.
-            try { localStorage.removeItem(SAVE_PREFIX + slug); } catch (e) { }
+            try {
+              localStorage.removeItem(SAVE_PREFIX + slug);
+              localStorage.removeItem(SAVE_PREFIX + slug + ":fmt");
+            } catch (e) { }
           } else {
-            try { localStorage.setItem(SAVE_PREFIX + slug, board.toDataURL("image/png")); } catch (e) { }
+            try {
+              localStorage.setItem(SAVE_PREFIX + slug, board.toDataURL("image/png"));
+              localStorage.setItem(SAVE_PREFIX + slug + ":fmt", "2");
+            } catch (e) { }
           }
         });
       }, "image/png");
@@ -582,12 +663,16 @@
   }
   function restoreProgress() {
     var slug = currentSlug;
-    saveDbGet(slug).then(function (blob) {
-      var url = null, data = null;
+    saveDbGet(slug).then(function (rec) {
+      var url = null, data = null, fmt = 1;
+      var blob = rec && rec.blob ? (fmt = rec.fmt || 2, rec.blob) : rec;
       if (blob) {
         url = URL.createObjectURL(blob);
       } else {
-        try { data = localStorage.getItem(SAVE_PREFIX + slug); } catch (e) { }
+        try {
+          data = localStorage.getItem(SAVE_PREFIX + slug);
+          if (localStorage.getItem(SAVE_PREFIX + slug + ":fmt") === "2") fmt = 2;
+        } catch (e) { }
         if (!data) return;
       }
       var img = new Image();
@@ -605,8 +690,10 @@
           if (boardDirty) return;   // fresh strokes beat a late restore
           // Saves can come from a different canvas size/aspect (other
           // orientation, older layout) — remap through the art rectangle
-          // so restored color lands exactly on the line art.
-          remapPaint(img, img.width, img.height);
+          // so restored color lands exactly on the line art. Legacy saves
+          // (fmt 1) were painted under the old whole-bitmap placement.
+          remapPaint(img, img.width, img.height,
+            fmt < 2 ? artRectLegacy(img.width, img.height) : null);
           boardDirty = true;   // restored paint has no in-session history, but the
           updateHistoryButtons();   // undo button can still reset to a fresh page
         };
@@ -622,11 +709,12 @@
     maskCanvas = null; maskBits = null;   // region masks depend on lineData
     if (!pageFn && !pageImg) { lineData = null; buildZones(); return; }
     if (pageImg) {
-      // image-based coloring page (e.g. Forest Pals): fit centred with a margin
-      var m = Math.min(W, H) * 0.04;
-      var sc = Math.min((W - 2 * m) / pageImg.width, (H - 2 * m) / pageImg.height);
-      var dw = pageImg.width * sc, dh = pageImg.height * sc;
-      lctx.drawImage(pageImg, (W - dw) / 2, (H - dh) / 2, dw, dh);
+      // image-based coloring page: contain-fit of the meaningful ink bounds
+      // (artRect), so baked-in source margins never shrink the artwork
+      lctx.imageSmoothingEnabled = true;
+      try { lctx.imageSmoothingQuality = "high"; } catch (e) { }
+      var pr = artRect(W, H);
+      lctx.drawImage(pageImg, pr.x, pr.y, pr.w, pr.h);
     } else {
       var s = Math.min(W, H) * 0.46;
       withChar(lctx, W / 2, H / 2, s, pageFn, true);
@@ -787,10 +875,15 @@
     g.fillStyle = "#ffffff";
     g.fillRect(0, 0, t.width, t.height);
     if (pageImg) {
-      // fresh printable copy of the image-based line art
-      var isc = Math.min(1240 / pageImg.width, 1460 / pageImg.height);
-      var idw = pageImg.width * isc, idh = pageImg.height * isc;
-      g.drawImage(pageImg, (t.width - idw) / 2, 110, idw, idh);
+      // fresh printable copy of the image-based line art — same ink-bounds
+      // fit as the studio, so baked source margins don't shrink the print
+      var pink = inkRect(pageImg);
+      var isc = Math.min(1240 / pink.w, 1460 / pink.h);
+      try { g.imageSmoothingQuality = "high"; } catch (e) { }
+      g.drawImage(pageImg,
+        (t.width - pink.w * isc) / 2 - pink.x * isc,
+        110 + (1460 - pink.h * isc) / 2 - pink.y * isc,
+        pageImg.width * isc, pageImg.height * isc);
       g.fillStyle = "#5A4A42";
       g.font = "600 48px 'Poppins', sans-serif";
       g.textAlign = "center";
@@ -883,14 +976,14 @@
       [[926, 370], [929, 471]]
     ],
     kori: [
-      // bear: head + body + ear rings/inners + cheeks + foot pads
-      [[518, 467], [505, 819], [689, 276], [678, 291], [348, 278], [357, 293], [681, 552], [355, 552], [624, 815], [357, 976], [361, 1000]],
-      // caught fish: body + tail + fins
-      [[630, 978], [687, 1046], [721, 959], [733, 1062], [642, 1064], [686, 990]],
-      // ice fishing hole
-      [[586, 1135], [740, 1145], [648, 1183]],
+      // bear (v2 art, July 27 2026): head/body + ear inners + cheeks + the
+      // rod arm carves the chest into three pockets (paw, sliver over the
+      // paw, chest loop) + both feet (the fish splits the right foot in two)
+      [[513, 642], [342, 335], [705, 335], [359, 565], [681, 565], [478, 778], [645, 735], [621, 819], [336, 931], [361, 1003], [631, 965], [718, 948]],
+      // ice fishing hole: rim + water inside
+      [[620, 1130], [649, 1188]],
       // ice floe: top + carved side facets
-      [[522, 1089], [48, 997], [1001, 1110], [53, 1158], [108, 1183], [190, 1222], [288, 1285], [399, 1319], [522, 1338], [680, 1333], [813, 1294], [886, 1269], [947, 1209]]
+      [[860, 1062], [52, 1000], [53, 1154], [109, 1167], [189, 1220], [289, 1293], [384, 1316], [517, 1346], [644, 1349], [812, 1284], [886, 1269], [947, 1202], [1001, 1099]]
     ],
     panpan: [
       // panda: body/face + ear rings/inners + cheeks + nose + mouth + feet
@@ -947,9 +1040,11 @@
     // authored groups (image-based pages; points are source-image pixels)
     var groups = pageImg && ZONE_GROUPS[currentSlug];
     if (groups) {
-      var m = Math.min(W, H) * 0.04;
-      var sc = Math.min((W - 2 * m) / pageImg.width, (H - 2 * m) / pageImg.height);
-      var gox = (W - pageImg.width * sc) / 2, goy = (H - pageImg.height * sc) / 2;
+      // Source-pixel group points map through the SAME artRect placement
+      // drawPage used, so authored zones stay glued to the rendered art.
+      var gr = artRect(W, H);
+      var sc = gr.w / pageImg.width;
+      var gox = gr.x, goy = gr.y;
       // Authored points must land in open paper. A tiny nudge absorbs
       // scaling jitter, but never roams far — a distant nudge could union
       // a NEIGHBORING region into the zone, which is worse than skipping.
@@ -1340,23 +1435,33 @@
   }
   board.addEventListener("pointerleave", function () { ring.style.display = "none"; });
 
-  // ---------- boot: select pencil, open the first coloring page ----------
+  // ---------- boot: route bare launches home; open explicit coloring pages ----------
   var splash = document.getElementById("splash");
   var splashShownAt = Date.now();
-  function hideSplash() {
+  function hideSplash(destination) {
     if (!splash) return;
-    // Keep the splash up at least briefly so it reads as a moment, not a flicker.
-    var wait = Math.max(0, 1100 - (Date.now() - splashShownAt));
-    setTimeout(function () { splash.classList.add("done"); }, wait);
-    // First visit ever: run the little welcome tour once the splash is gone.
-    setTimeout(maybeShowTutorial, wait + 600);
+    // Cold launches hold the splash long enough for the panda to finish
+    // painting the heart (~1.9s); repeat in-session navigations (.quick) and
+    // reduced-motion users only get a brief settle so nothing feels stuck.
+    // The app is already booted by the time this runs — the wait is display
+    // polish only, and index.html's 6s failsafe still caps everything.
+    var minShow = 1900;
+    if (splash.classList.contains("quick")) minShow = 250;
+    else if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) minShow = 600;
+    var wait = Math.max(0, minShow - (Date.now() - splashShownAt));
+    setTimeout(function () {
+      if (destination) location.replace(destination);
+      else splash.classList.add("done");
+    }, wait);
+    // The tutorial belongs to the studio, never the home-page destination.
+    if (!destination) setTimeout(maybeShowTutorial, wait + 600);
   }
   markTool();
   initCanvas();
   // Deep link from the home page: /?pal=usagi opens that pal's coloring page,
   // /?pal=ellie (etc.) opens an image-based page, and /?pal=blank opens a
   // blank canvas for free drawing.
-  var startIdx = 0, startForest = null, startBlank = false;
+  var startIdx = 0, startForest = null, startBlank = false, startHome = false;
   try {
     var palParam = (new URLSearchParams(location.search).get("pal") || "").toLowerCase();
     startBlank = palParam === "blank";
@@ -1366,11 +1471,15 @@
     IMAGE_PALS.forEach(function (p) {
       if (p.slug === palParam) startForest = p;
     });
-    // No deep link: open the image-based Usagi page.
-    if (!palParam) startForest = MEADOW_PALS[0];
+    // A bare launch shows the animation, then lands on the home/pal picker.
+    if (!palParam) startHome = true;
   } catch (err) {}
   function boot() {
     if (!ready) { requestAnimationFrame(boot); return; }
+    if (startHome) {
+      hideSplash("/home");
+      return;
+    }
     if (startBlank) {
       pageFn = null; pageImg = null; pageName = "";
       currentSlug = "blank";
@@ -1511,16 +1620,33 @@
     tutorialEl.hidden = false;
     if (tutNext) tutNext.focus({ preventScroll: true });
   }
+  var tutDontShow = document.getElementById("tutDontShow");
   function closeTutorial(quiet) {
     if (!tutorialEl || tutorialEl.hidden) return;
     tutorialEl.hidden = true;
-    try { localStorage.setItem(TUT_KEY, "1"); } catch (e) { }
+    // "Don't show this again" is checked by default; unchecking keeps the
+    // tour for the next visit. The choice is written to localStorage AND
+    // the IndexedDB save store: Safari can evict localStorage after a week
+    // away, which resurrected the tour and made it feel naggy.
+    var never = !tutDontShow || tutDontShow.checked;
+    try { localStorage.setItem(TUT_KEY, never ? "1" : "0"); } catch (e) { }
+    saveDbPut("::" + TUT_KEY, never ? "1" : "0");
     if (!quiet) toast("Have fun! Tap Help any time for a reminder 🍡");
   }
   function maybeShowTutorial() {
-    var done = "1";
+    var done = null;
     try { done = localStorage.getItem(TUT_KEY); } catch (e) { }
-    if (!done) showTutorial();
+    if (done === "1") return;
+    if (done === "0") { showTutorial(); return; }
+    // No local flag — check the sturdier IndexedDB copy before popping up,
+    // so an evicted localStorage never re-nags someone who opted out.
+    saveDbGet("::" + TUT_KEY).then(function (v) {
+      if (v === "1") {
+        try { localStorage.setItem(TUT_KEY, "1"); } catch (e) { }
+        return;
+      }
+      showTutorial();
+    });
   }
   if (tutSkip) tutSkip.addEventListener("click", function () { closeTutorial(true); });
   if (tutNext) tutNext.addEventListener("click", function () {
@@ -1531,6 +1657,31 @@
     openHelp(false);
     showTutorial();
   });
+
+  // ---------- landscape-first studio ----------
+  // The installed app locks via the manifest ("orientation": "landscape");
+  // where the platform also exposes the Screen Orientation API (Android
+  // browsers, installed PWAs) we ask for the same lock at runtime. Plain
+  // browser tabs reject the call — the CSS rotate gate covers those. The
+  // "keep coloring this way" escape appears after a moment so a device
+  // with its rotation lock switched on can never strand a kid.
+  try {
+    if (screen.orientation && screen.orientation.lock) {
+      screen.orientation.lock("landscape").catch(function () { });
+    }
+  } catch (e) { }
+  var rotateGate = document.getElementById("rotateGate");
+  var rotateSkip = document.getElementById("rotateGateSkip");
+  if (rotateGate) {
+    try {
+      if (sessionStorage.getItem("mochi-rotate-skip") === "1") rotateGate.classList.add("dismissed");
+    } catch (e) { }
+    setTimeout(function () { if (rotateSkip) rotateSkip.hidden = false; }, 4000);
+    if (rotateSkip) rotateSkip.addEventListener("click", function () {
+      rotateGate.classList.add("dismissed");
+      try { sessionStorage.setItem("mochi-rotate-skip", "1"); } catch (e) { }
+    });
+  }
 
   // ---------- PWA: offline support (production only, keeps local dev simple) ----------
   if ("serviceWorker" in navigator && location.protocol === "https:") {
