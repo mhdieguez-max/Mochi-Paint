@@ -903,7 +903,10 @@
     var url = t.toDataURL("image/png");
     var w = window.open("", "_blank");
     if (w) {
-      w.document.write('<title>Mochi Paint coloring page</title><img src="' + url + '" style="width:100%" onload="setTimeout(function(){window.print()},200)">');
+      // @page margin:0 removes the browser's default print header/footer
+      // (URL + date are drawn in those margins); body padding keeps the art
+      // off the printer's hardware edge instead.
+      w.document.write('<title>Mochi Paint coloring page</title><style>@page{margin:0}html,body{margin:0}body{padding:8mm}img{width:100%}</style><img src="' + url + '" onload="setTimeout(function(){window.print()},200)">');
       w.document.close();
       toast("Opening the print view 🖨️");
     } else {

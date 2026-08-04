@@ -24,3 +24,19 @@
   Cache-Control: no-store
 /sw.js
   Cache-Control: no-store
+/privacy
+  Cache-Control: no-store
+/data-deletion
+  Cache-Control: no-store
+/terms
+  Cache-Control: no-store
+/terms.html
+  Cache-Control: no-store
+/support
+  Cache-Control: no-store
+/support.html
+  Cache-Control: no-store
+/contact
+  Cache-Control: no-store
+/contact.html
+  Cache-Control: no-store

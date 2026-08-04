@@ -5,7 +5,7 @@
 // copy when the network is gone.
 // v32: landscape-first studio (manifest lock + rotate gate) —
 // the version bump drops every stale runtime-cached copy on activate.
-var CACHE = "mochi-paint-v32";
+var CACHE = "mochi-paint-v33";
 var CORE = [
   "/",
   "/home",
@@ -14,6 +14,9 @@ var CORE = [
   "/theme.html",
   "/privacy.html",
   "/data-deletion.html",
+  "/terms.html",
+  "/support.html",
+  "/contact.html",
   "/app.js",
   "/pals.js",
   "/style.css",
