@@ -10,49 +10,109 @@
 <meta name="description" content="A cozy kawaii coloring app: open a chunky pastel pal as a coloring page, fill inside the lines, and shade with soft brushes.">
 <meta name="theme-color" content="#f5e6f0">
 <link rel="manifest" href="/manifest.webmanifest">
-<link rel="icon" href="favicon.ico" sizes="any">
-<link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="icon-16.png">
-<link rel="apple-touch-icon" href="icon-180.png">
+<!-- ?v=2 busts sticky favicon caches left over from the pre-redesign icon -->
+<link rel="icon" href="/favicon.ico?v=2" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png?v=2">
+<link rel="icon" type="image/png" sizes="16x16" href="/icon-16.png?v=2">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Mochi Paint">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="canonical" href="https://summer-silence-662e.mhdieguez.workers.dev/">
+<link rel="canonical" href="https://mochipaint.com/">
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Mochi Paint">
 <meta property="og:title" content="Mochi Paint — kawaii coloring studio">
 <meta property="og:description" content="A cozy kawaii coloring app: open a chunky pastel pal, fill inside the lines, and shade with soft brushes.">
-<meta property="og:url" content="https://summer-silence-662e.mhdieguez.workers.dev/">
-<meta property="og:image" content="https://summer-silence-662e.mhdieguez.workers.dev/share-card.png">
+<meta property="og:url" content="https://mochipaint.com/">
+<meta property="og:image" content="https://mochipaint.com/share-card.png?v=2">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Mochi Paint mascot — a kawaii cat holding a paintbrush and a star">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Mochi Paint — kawaii coloring studio">
 <meta name="twitter:description" content="A cozy kawaii coloring app: open a chunky pastel pal, fill inside the lines, and shade with soft brushes.">
-<meta name="twitter:image" content="https://summer-silence-662e.mhdieguez.workers.dev/share-card.png">
+<meta name="twitter:image" content="https://mochipaint.com/share-card.png?v=2">
 <link rel="stylesheet" href="/fonts.css">
 <link rel="stylesheet" href="/parental-gate.css">
-<link rel="stylesheet" href="style.css?v=20">
+<link rel="stylesheet" href="style.css?v=24">
 </head>
 <body>
 
 <div id="splash" aria-hidden="true">
   <div class="splash-inner">
-    <span class="splash-mochi">🍡</span>
+    <!-- Every character layer below is cut directly from hero-pals.png.
+         No character is redrawn: at rest these layers reconstruct the
+         canonical hero pixel-for-pixel. The small SVG contains paint only. -->
+    <div class="splash-scene" aria-hidden="true">
+      <img class="splash-layer splash-base" src="/splash/scene-base.png" alt="">
+      <img class="splash-layer splash-chick" src="/splash/chick-wing.png" alt="">
+      <img class="splash-layer splash-bear" src="/splash/bear-arm.png" alt="">
+      <img class="splash-layer splash-fox" src="/splash/fox-tail.png" alt="">
+      <img class="splash-layer splash-polar" src="/splash/polar-paw.png" alt="">
+      <img class="splash-layer splash-brush" src="/splash/panda-brush.png" alt="">
+      <svg class="splash-paint" viewBox="0 0 2020 778" focusable="false">
+        <defs>
+          <linearGradient id="splashHeartPaint" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#f4a4d4"/>
+            <stop offset=".48" stop-color="#e17bb7"/>
+            <stop offset="1" stop-color="#a98de0"/>
+          </linearGradient>
+          <linearGradient id="splashTrailPaint" x1="1" y1="1" x2="0" y2="0">
+            <stop offset="0" stop-color="#f0d48f"/>
+            <stop offset=".45" stop-color="#f4a4d4"/>
+            <stop offset="1" stop-color="#a98de0"/>
+          </linearGradient>
+        </defs>
+        <path class="splash-trail" pathLength="100"
+          d="M1111 454C1180 410 1190 330 1200 250C1210 170 1170 105 1125 78"
+          fill="none" stroke="url(#splashTrailPaint)" stroke-width="14"
+          stroke-linecap="round"/>
+        <path class="splash-heart-fill"
+          d="M1010 215C920 175 870 120 895 78C920 35 980 50 1010 95C1040 50 1100 35 1125 78C1150 120 1100 175 1010 215Z"
+          fill="#f7c6de"/>
+        <path class="splash-heart-line" pathLength="100"
+          d="M1010 215C920 175 870 120 895 78C920 35 980 50 1010 95C1040 50 1100 35 1125 78C1150 120 1100 175 1010 215Z"
+          fill="none" stroke="url(#splashHeartPaint)" stroke-width="15"
+          stroke-linecap="round" stroke-linejoin="round"/>
+        <g class="splash-sparkles" fill="#ffd65c">
+          <path d="M850 128l7 18 18 7-18 7-7 18-7-18-18-7 18-7z"/>
+          <path d="M1162 73l5 13 13 5-13 5-5 13-5-13-13-5 13-5z"/>
+          <circle cx="1168" cy="184" r="8" fill="#a8d5ff"/>
+        </g>
+      </svg>
+    </div>
     <div class="splash-logo">Mochi Paint</div>
     <div class="splash-tag">kawaii coloring studio</div>
-    <div class="splash-dots"><i></i><i></i><i></i><i></i></div>
   </div>
 </div>
 <script>
 // Safety net: if anything goes wrong during boot, never strand users on the splash.
 setTimeout(function () {
   var s = document.getElementById("splash");
-  if (s) s.classList.add("done");
+  if (!s) return;
+  try {
+    // A bare app launch belongs on the home/pal picker after the animation.
+    // Explicit ?pal=... deep links still reveal the requested studio page.
+    if (!(new URLSearchParams(location.search).get("pal") || "").trim()) {
+      location.replace("/home");
+      return;
+    }
+  } catch (e) { }
+  s.classList.add("done");
 }, 6000);
+// Repeat in-session navigations (home -> studio -> home) skip straight to the
+// finished frame and a short fade; cold launches (installed app, first visit
+// of a session) get the full paint-the-heart moment.
+(function () {
+  var quick = false;
+  try {
+    quick = sessionStorage.getItem("mochi-splash-seen") === "1";
+    sessionStorage.setItem("mochi-splash-seen", "1");
+  } catch (e) { }
+  if (quick) document.getElementById("splash").classList.add("quick");
+})();
 </script>
 
 
@@ -248,6 +308,20 @@ setTimeout(function () {
       <button class="help-btn ghost" id="tutSkip">Skip</button>
       <button class="help-btn" id="tutNext">Next</button>
     </div>
+    <label class="tut-remember"><input type="checkbox" id="tutDontShow" checked> Don't show this again</label>
+  </div>
+</div>
+
+<!-- Rotate gate: the studio is a landscape experience (like the big kids'
+     coloring apps). The installed app locks via the manifest; in a browser
+     tab nothing can force rotation, so this friendly cover asks for a turn
+     whenever a touch device holds the studio in portrait. A small escape
+     appears after a moment for devices whose rotation lock is switched on. -->
+<div id="rotateGate" role="status">
+  <div class="rg-inner">
+    <div class="rg-phone" aria-hidden="true">📱</div>
+    <p>Turn your device sideways —<br>the coloring page gets the whole screen!</p>
+    <button class="help-btn ghost" id="rotateGateSkip" hidden>Keep coloring this way</button>
   </div>
 </div>
 
@@ -255,6 +329,6 @@ setTimeout(function () {
 
 <script src="/parental-gate.js"></script>
 <script src="pals.js?v=4"></script>
-<script src="app.js?v=34"></script>
+<script src="app.js?v=39"></script>
 </body>
 </html>

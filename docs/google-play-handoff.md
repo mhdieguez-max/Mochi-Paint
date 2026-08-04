@@ -5,8 +5,8 @@ This is an engineering handoff, not a guarantee of store approval or legal advic
 ## Locked release details
 
 - App and launcher name: `Mochi Paint`
-- Android package: `com.mhdieguez.mochipaint`
-- Web host: `summer-silence-662e.mhdieguez.workers.dev`
+- Android package: `com.mochipaint.app`
+- Web host: `mochipaint.com`
 - Launch path and web scope: `/`
 - Packaging: Bubblewrap Trusted Web Activity
 - Output: Android App Bundle (`.aab`)
@@ -27,7 +27,7 @@ This is an engineering handoff, not a guarantee of store approval or legal advic
 Use a current Bubblewrap CLI and initialize from the deployed manifest:
 
 ```text
-bubblewrap init --manifest=https://summer-silence-662e.mhdieguez.workers.dev/manifest.webmanifest
+bubblewrap init --manifest=https://mochipaint.com/manifest.webmanifest
 ```
 
 Confirm these values during initialization:
@@ -35,8 +35,8 @@ Confirm these values during initialization:
 ```text
 Application name: Mochi Paint
 Launcher name: Mochi Paint
-Package ID: com.mhdieguez.mochipaint
-Host: summer-silence-662e.mhdieguez.workers.dev
+Package ID: com.mochipaint.app
+Host: mochipaint.com
 Start URL: /
 Display mode: standalone
 Notifications: disabled
@@ -58,8 +58,8 @@ For local TWA verification, start with the release/upload certificate fingerprin
 
 Before release, verify:
 
-- `https://summer-silence-662e.mhdieguez.workers.dev/.well-known/assetlinks.json` returns HTTP 200.
-- The response is valid JSON, has no redirect, and identifies only `com.mhdieguez.mochipaint`.
+- `https://mochipaint.com/.well-known/assetlinks.json` returns HTTP 200.
+- The response is valid JSON, has no redirect, and identifies only `com.mochipaint.app`.
 - The fingerprints exactly match the installed/test certificate and, later, the Play app-signing certificate.
 - The installed app opens full-screen as a TWA rather than falling back to a Custom Tab.
 
@@ -75,7 +75,7 @@ node scripts/audit-android-manifest.mjs android/app/build/intermediates/merged_m
 
 The audit rejects advertising ID, camera, microphone, contacts, location, media, and legacy external-storage permissions. Also verify the built artifact reports:
 
-- package `com.mhdieguez.mochipaint`
+- package `com.mochipaint.app`
 - target SDK 36
 - the expected signing certificate
 - no unexpected SDKs, components, or permissions
