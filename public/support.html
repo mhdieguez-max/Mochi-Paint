@@ -19,11 +19,17 @@
     h2{font-family:'Baloo 2',cursive;font-size:19px;margin:22px 0 6px;color:#6B5350}
     p,li{font-weight:600;color:#7A6861;margin:8px 0}
     a{color:#B0567F}
+    .topbar{display:flex;align-items:center;gap:10px}
+    .back{display:inline-flex;align-items:center;gap:6px;font-family:'Baloo 2',cursive;font-weight:800;font-size:16px;color:#8A6BB8;background:rgba(255,255,255,.68);padding:8px 16px;border-radius:999px;text-decoration:none;box-shadow:0 2px 8px rgba(200,150,190,.2)}
+    .back:active{transform:scale(.96)}
   </style>
 </head>
 <body>
   <div class="shell">
-    <a class="brand" href="/home"><span>🍡</span><span>Mochi Paint</span></a>
+    <div class="topbar">
+      <a class="back" href="/home" id="backLink" aria-label="Go back"><span aria-hidden="true">←</span><span>Back</span></a>
+      <a class="brand" href="/home"><span>🍡</span><span>Mochi Paint</span></a>
+    </div>
     <div class="card">
       <h1>Help &amp; Support</h1>
       <p>Mochi Paint is provided by CyberPrep Solutions LLC. Answers to common questions are below.</p>
@@ -53,6 +59,16 @@
       <p>Email <a href="mailto:support@mochipaint.com">support@mochipaint.com</a>. Please include your device model, Android version, and what happened — screenshots help. We aim to respond within 2 business days. See also the <a href="/contact.html">Contact page</a>.</p>
     </div>
   </div>
+  <script>
+    // Behave like a real back button when the page was reached from inside
+    // the app; a direct/fresh open (no history) falls through to /home.
+    document.getElementById("backLink").addEventListener("click", function (e) {
+      if (window.history.length > 1 && document.referrer !== "") {
+        e.preventDefault();
+        window.history.back();
+      }
+    });
+  </script>
   <script src="/parental-gate.js"></script>
 </body>
 </html>
